@@ -430,21 +430,31 @@ tr:hover {
     align-items: center;
 }
 
+/* Hidden but valid for form validation */
+.hidden-but-valid {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nav-container {
         flex-direction: column;
         gap: 1rem;
     }
-    
+
     .nav-links {
         gap: 1rem;
     }
-    
+
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }

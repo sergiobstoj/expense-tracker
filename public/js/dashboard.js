@@ -374,15 +374,14 @@ function handleQuickTypeChange(e) {
     }
     
     const typeCategories = categories[type] || [];
-    
-    // Show quick buttons for frequent categories
+
+    // Show ALL categories as buttons
     if (quickCategoriesDiv) {
         quickCategoriesDiv.style.display = 'block';
         const quickButtonsContainer = document.getElementById('quickCategoryButtons');
-        
-        // Show first 5 categories as quick buttons
-        const quickCategories = typeCategories.slice(0, 5);
-        quickButtonsContainer.innerHTML = quickCategories.map(cat => {
+
+        // Show ALL categories as quick buttons
+        quickButtonsContainer.innerHTML = typeCategories.map(cat => {
             const catName = typeof cat === 'string' ? cat : cat.name;
             const catEmoji = typeof cat === 'object' && cat.emoji ? cat.emoji : '';
             return `
@@ -391,30 +390,17 @@ function handleQuickTypeChange(e) {
                 </button>
             `;
         }).join('');
-        
-        // Add "Otro..." button
-        quickButtonsContainer.innerHTML += `
-            <button type="button" class="quick-category-btn" id="btnOtherCategory">
-                ➕ Otro...
-            </button>
-        `;
-        
+
         // Add click handlers
         document.querySelectorAll('.quick-category-btn[data-category]').forEach(btn => {
             btn.addEventListener('click', () => {
                 categorySelect.value = btn.dataset.category;
                 document.querySelectorAll('.quick-category-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                categorySelect.style.display = 'none';
             });
         });
-        
-        document.getElementById('btnOtherCategory').addEventListener('click', () => {
-            categorySelect.style.display = 'block';
-            categorySelect.focus();
-            document.querySelectorAll('.quick-category-btn').forEach(b => b.classList.remove('active'));
-        });
-        
+
+        // Hide the select since we only use buttons
         categorySelect.style.display = 'none';
     }
     

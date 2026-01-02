@@ -27,42 +27,28 @@ async function loadIncomeCategories() {
     const editCategorySelect = document.getElementById('editCategory');
     const quickButtonsContainer = document.getElementById('quickIncomeCategoryButtons');
     
-    // Populate quick buttons (show all as buttons since income categories are few)
+    // Populate quick buttons (show ALL as buttons - no "Otro")
     if (quickButtonsContainer) {
         quickButtonsContainer.innerHTML = incomeCategories.map(category => {
             const catName = typeof category === 'string' ? category : category.name;
             const catEmoji = typeof category === 'object' && category.emoji ? category.emoji : '💰';
-            
+
             return `
                 <button type="button" class="quick-income-btn" data-category="${catName}">
                     ${catEmoji} ${catName}
                 </button>
             `;
         }).join('');
-        
-        // Add "Otro..." button
-        quickButtonsContainer.innerHTML += `
-            <button type="button" class="quick-income-btn" id="btnOtherIncomeCategory">
-                ➕ Otro...
-            </button>
-        `;
-        
+
         // Add click handlers
         document.querySelectorAll('.quick-income-btn[data-category]').forEach(btn => {
             btn.addEventListener('click', () => {
                 categorySelect.value = btn.dataset.category;
                 document.querySelectorAll('.quick-income-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                categorySelect.style.display = 'none';
             });
         });
-        
-        document.getElementById('btnOtherIncomeCategory').addEventListener('click', () => {
-            categorySelect.style.display = 'block';
-            categorySelect.focus();
-            document.querySelectorAll('.quick-income-btn').forEach(b => b.classList.remove('active'));
-        });
-        
+
         // Select first category by default
         if (incomeCategories.length > 0) {
             const firstCat = incomeCategories[0];
@@ -71,6 +57,9 @@ async function loadIncomeCategories() {
             document.querySelector('.quick-income-btn[data-category]')?.classList.add('active');
         }
     }
+
+    // Hide the select completely since we only use buttons
+    categorySelect.style.display = 'none';
     
     categorySelect.innerHTML = '<option value="">Selecciona...</option>';
     editCategorySelect.innerHTML = '';

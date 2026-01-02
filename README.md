@@ -64,15 +64,88 @@ Sistema web local para gestión de gastos personales y compartidos con división
 npm install
 ```
 
-2. **Inicia el servidor:**
+2. **Configura el entorno (opcional):**
+```bash
+# Copia el archivo de ejemplo
+cp .env.example .env
+
+# Edita .env si necesitas cambiar puerto o habilitar red local
+```
+
+3. **Inicia el servidor:**
 ```bash
 npm start
 ```
 
-3. **Abre tu navegador en:**
+4. **Abre tu navegador en:**
 ```
 http://localhost:3000
 ```
+
+## 🌐 Acceso desde Red Local (WiFi)
+
+Para acceder desde otros dispositivos en tu red WiFi:
+
+### Paso 1: Configurar el servidor
+Crea o edita el archivo `.env` en la raíz del proyecto:
+
+```env
+HOST=0.0.0.0
+PORT=3000
+```
+
+### Paso 2: Obtener tu IP local
+
+**Windows (CMD o PowerShell):**
+```cmd
+ipconfig
+```
+Busca "Dirección IPv4" o "IPv4 Address" → ejemplo: `192.168.1.100`
+
+**Mac/Linux (Terminal):**
+```bash
+ifconfig
+# o
+ip addr show
+```
+Busca "inet" → ejemplo: `192.168.1.100`
+
+### Paso 3: Reiniciar el servidor
+```bash
+npm start
+```
+
+Deberías ver:
+```
+📱 Access from other devices on your network:
+   Find your IP with: ipconfig (Windows) or ifconfig (Mac/Linux)
+   Then use: http://YOUR_IP:3000
+```
+
+### Paso 4: Acceder desde otros dispositivos
+Desde cualquier dispositivo conectado a la MISMA WiFi:
+```
+http://192.168.1.100:3000
+```
+(Reemplaza `192.168.1.100` con TU IP local)
+
+### ⚠️ Firewall (si no puedes acceder)
+
+**Windows:**
+```powershell
+# Ejecuta PowerShell como Administrador
+New-NetFirewallRule -DisplayName "Expense Tracker" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo ufw allow 3000/tcp
+sudo ufw reload
+```
+
+**Mac:**
+1. Preferencias del Sistema → Seguridad y Privacidad → Firewall
+2. Opciones de Firewall → Añadir aplicación → Node
 
 ## 🎯 Primer Uso
 
@@ -121,9 +194,21 @@ Los datos se almacenan en formato JSON en la carpeta `data/`:
 ### categories.json
 ```json
 {
-  "fijo": ["Arriendo", "Gym", "Cuotas"],
-  "variable": ["Supermercado", "Luz", "Agua"],
-  "diario": ["Café", "Transporte", "Comida"]
+  "fijo": [
+    { "name": "Arriendo", "emoji": "🏠" },
+    { "name": "Gym", "emoji": "💪" },
+    { "name": "Cuotas", "emoji": "💳" }
+  ],
+  "variable": [
+    { "name": "Supermercado", "emoji": "🛒" },
+    { "name": "Luz", "emoji": "💡" },
+    { "name": "Agua", "emoji": "💧" }
+  ],
+  "diario": [
+    { "name": "Café", "emoji": "☕" },
+    { "name": "Transporte", "emoji": "🚌" },
+    { "name": "Comida", "emoji": "🍔" }
+  ]
 }
 ```
 
@@ -199,33 +284,61 @@ npm run dev        # Inicia con nodemon (reinicio automático)
 
 ```
 expense-tracker/
-├── server.js              # Servidor Express
+├── server.js              # Servidor Express (refactorizado)
 ├── package.json
+├── src/                   # Código fuente backend
+│   ├── routes/           # Rutas de la API
+│   │   ├── expenses.js
+│   │   ├── incomes.js
+│   │   ├── categories.js
+│   │   └── config.js
+│   ├── services/         # Servicios
+│   │   ├── fileService.js     # Manejo de archivos JSON
+│   │   └── backupService.js   # Sistema de backups
+│   └── utils/            # Utilidades
+│       └── validators.js      # Validación de datos
 ├── data/                  # Datos JSON (se crea automáticamente)
 │   ├── expenses.json
+│   ├── incomes.json
 │   ├── categories.json
-│   └── config.json
-└── public/
+│   ├── income-categories.json
+│   ├── config.json
+│   └── backups/          # Backups automáticos diarios
+└── public/               # Frontend
     ├── index.html         # Página principal
+    ├── login.html         # Login con PIN
     ├── history.html       # Historial
+    ├── incomes.html       # Gestión de ingresos
     ├── reports.html       # Reportes
     ├── settings.html      # Configuración
     ├── css/
     │   └── styles.css     # Estilos globales
     └── js/
+        ├── auth.js        # Autenticación
         ├── utils.js       # Utilidades comunes
-        ├── main.js        # Lógica principal
+        ├── dashboard.js   # Lógica del dashboard
+        ├── login.js       # Lógica de login
         ├── history.js     # Lógica de historial
+        ├── incomes.js     # Lógica de ingresos
         ├── reports.js     # Lógica de reportes
         └── settings.js    # Lógica de configuración
 ```
 
 ## 📊 Tecnologías
 
-- **Backend**: Node.js + Express
+- **Backend**: Node.js + Express (arquitectura modular)
 - **Frontend**: HTML5, CSS3, JavaScript vanilla
 - **Gráficos**: Chart.js
-- **Almacenamiento**: JSON local
+- **Almacenamiento**: JSON local (simple y portable)
+
+## 🔒 Seguridad y Calidad
+
+- ✅ **Validación de datos** en backend (tipos, rangos, fechas válidas)
+- ✅ **IDs únicos** con UUID (previene colisiones)
+- ✅ **Código modular** (separación de rutas, servicios y utilidades)
+- ✅ **Backups automáticos** diarios con retención de 30 días
+- ✅ **URL relativa del API** (funciona en red local)
+- ⚠️ **Uso personal**: Diseñado para uso en red local confiable
 
 ## 🤝 Contribución
 

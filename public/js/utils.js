@@ -1,5 +1,5 @@
-// API Base URL
-const API_BASE = 'http://localhost:3000/api';
+// API Base URL - Relative URL works in local network
+const API_BASE = '/api';
 
 // Utility functions for API calls
 const api = {
