@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Gastos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="nav-brand">💰 Gestor de Gastos</a>
+            <ul class="nav-links">
+                <li><a href="/" class="active">Dashboard</a></li>
+                <li><a href="#" id="navAddExpense">+ Gasto</a></li>
+                <li><a href="/incomes.html">+ Ingreso</a></li>
+                <li><a href="/history.html">Historial</a></li>
+                <li><a href="/reports.html">Reportes</a></li>
+                <li><a href="/settings.html">Configuración</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Dashboard</h1>
+            <p>Resumen de tu situación financiera del mes actual</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Month selector and quick actions -->
+        <div class="card">
+            <div class="flex justify-between items-center" style="flex-wrap: wrap; gap: 1rem;">
+                <div class="form-group" style="margin: 0; max-width: 300px;">
+                    <label for="dashboardMonth">Mes a visualizar</label>
+                    <select id="dashboardMonth">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+                <div class="flex gap-2" style="flex-wrap: wrap;">
+                    <a href="/incomes.html" class="btn btn-success">+ Ingreso</a>
+                    <a href="#" id="btnQuickExpense" class="btn btn-primary">+ Gasto</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                <div class="stat-label" style="color: rgba(255,255,255,0.9);">Ingresos del Mes</div>
+                <div class="stat-value" id="dashIncome" style="color: white;">€0.00</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
+                <div class="stat-label" style="color: rgba(255,255,255,0.9);">Gastos del Mes</div>
+                <div class="stat-value" id="dashExpenses" style="color: white;">€0.00</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                <div class="stat-label" style="color: rgba(255,255,255,0.9);">Balance Neto</div>
+                <div class="stat-value" id="dashBalance" style="color: white;">€0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Gastos Comunes</div>
+                <div class="stat-value" id="dashShared">€0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Gastos Personales</div>
+                <div class="stat-value" id="dashPersonal">€0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tasa de Ahorro</div>
+                <div class="stat-value" id="dashSavings">0%</div>
+            </div>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="card">
+            <div class="card-header">Balance entre Personas</div>
+            <div id="balanceContainer">
+                <p class="text-center">Selecciona un mes para ver el balance</p>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+            <!-- Income vs Expenses -->
+            <div class="card">
+                <div class="card-header">Ingresos vs Gastos</div>
+                <canvas id="chartIncomeExpenses"></canvas>
+            </div>
+
+            <!-- Expenses by Type -->
+            <div class="card">
+                <div class="card-header">Gastos por Tipo</div>
+                <canvas id="chartByType"></canvas>
+            </div>
+
+            <!-- Shared vs Personal -->
+            <div class="card">
+                <div class="card-header">Común vs Personal</div>
+                <canvas id="chartSharedPersonal"></canvas>
+            </div>
+
+            <!-- Income by Person -->
+            <div class="card">
+                <div class="card-header">Ingresos por Persona</div>
+                <canvas id="chartIncomeByPerson"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">Actividad Reciente</div>
+            <div class="table-container">
+                <table id="recentActivityTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Categoría</th>
+                            <th>Monto</th>
+                            <th>Persona</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentActivityBody">
+                        <tr>
+                            <td colspan="5" class="text-center">Cargando actividad reciente...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Expense Modal -->
+    <div id="quickExpenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Agregar Gasto Rápido</h2>
+                <button class="modal-close" onclick="closeQuickExpense()">&times;</button>
+            </div>
+            <form id="quickExpenseForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="qType">Tipo *</label>
+                        <select id="qType" name="type" required>
+                            <option value="">Selecciona...</option>
+                            <option value="fijo" selected>Fijo</option>
+                            <option value="variable">Variable</option>
+                            <option value="diario">Diario</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qAmount">Monto (€) *</label>
+                        <input type="number" id="qAmount" name="amount" step="0.01" min="0" required placeholder="0.00" autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qDate">Fecha *</label>
+                        <input type="date" id="qDate" name="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qPaidBy">Pagado por *</label>
+                        <select id="qPaidBy" name="paidBy" required>
+                            <option value="">Selecciona...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="quickCategories" style="margin-bottom: 1rem;">
+                    <label>Categoría *</label>
+                    <div id="quickCategoryButtons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                        <!-- Buttons will be populated dynamically -->
+                    </div>
+                    <select id="qCategory" name="category" required style="margin-top: 0.5rem; display: none;">
+                        <option value="">Primero selecciona un tipo</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="qIsShared" name="isShared" checked>
+                        <label for="qIsShared">Aportado a lo común</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="qDescription">Descripción</label>
+                    <textarea id="qDescription" name="description" placeholder="Opcional"></textarea>
+                </div>
+
+                <div class="flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">Guardar Gasto</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeQuickExpense()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+        .quick-category-btn {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        
+        .quick-category-btn:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        
+        .quick-category-btn.active {
+            border-color: #3b82f6;
+            background: #3b82f6;
+            color: white;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

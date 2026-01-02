@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Gestor de Gastos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+        }
+        
+        .login-header p {
+            color: #6b7280;
+        }
+        
+        .pin-input {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        
+        .pin-digit {
+            width: 3rem;
+            height: 3rem;
+            text-align: center;
+            font-size: 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .pin-digit:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .user-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .user-btn {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .user-btn:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+        
+        .user-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+        
+        .user-icon {
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>💰 Gestor de Gastos</h1>
+            <p>Ingresa tu PIN para continuar</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="user-buttons" id="userButtons">
+            <!-- Se llenarán dinámicamente -->
+        </div>
+
+        <form id="pinForm">
+            <div class="pin-input">
+                <input type="password" maxlength="1" class="pin-digit" id="pin1" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                <input type="password" maxlength="1" class="pin-digit" id="pin2" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                <input type="password" maxlength="1" class="pin-digit" id="pin3" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+                <input type="password" maxlength="1" class="pin-digit" id="pin4" inputmode="numeric" pattern="[0-9]" autocomplete="off">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+        </form>
+
+        <div style="text-align: center; margin-top: 1rem;">
+            <button id="btnMasterPin" class="btn btn-secondary btn-sm">Usar PIN Maestro</button>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script src="/js/login.js"></script>
+</body>
+</html>

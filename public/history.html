@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial - Gestor de Gastos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="nav-brand">💰 Gestor de Gastos</a>
+            <ul class="nav-links">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/" id="navAddExpense">+ Gasto</a></li>
+                <li><a href="/incomes.html">+ Ingreso</a></li>
+                <li><a href="/history.html" class="active">Historial</a></li>
+                <li><a href="/reports.html">Reportes</a></li>
+                <li><a href="/settings.html">Configuración</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Historial de Gastos</h1>
+            <p>Consulta y administra todos tus gastos registrados</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Filters Card -->
+        <div class="card">
+            <div class="card-header">Filtros</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="filterMonth">Mes</label>
+                    <select id="filterMonth">
+                        <option value="">Todos los meses</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="filterType">Tipo</label>
+                    <select id="filterType">
+                        <option value="">Todos los tipos</option>
+                        <option value="fijo">Fijo</option>
+                        <option value="variable">Variable</option>
+                        <option value="diario">Diario</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="filterPerson">Pagado por</label>
+                    <select id="filterPerson">
+                        <option value="">Todos</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="filterShared">Común/Personal</label>
+                    <select id="filterShared">
+                        <option value="">Todos</option>
+                        <option value="true">Común</option>
+                        <option value="false">Personal</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-2">
+                <button id="btnApplyFilters" class="btn btn-primary">Aplicar Filtros</button>
+                <button id="btnClearFilters" class="btn btn-secondary">Limpiar Filtros</button>
+                <button id="btnExportCSV" class="btn btn-success">Exportar a CSV</button>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Gastos</div>
+                <div class="stat-value" id="statTotal">€0.00</div>
+                <div class="stat-secondary" id="statCount">0 gastos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Gastos Comunes</div>
+                <div class="stat-value" id="statShared">€0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Gastos Personales</div>
+                <div class="stat-value" id="statPersonal">€0.00</div>
+            </div>
+        </div>
+
+        <!-- Expenses Table -->
+        <div class="card">
+            <div class="card-header">
+                <div class="flex justify-between items-center">
+                    <span>Gastos</span>
+                    <span id="resultCount"></span>
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Tipo</th>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
+                            <th>Monto</th>
+                            <th>Pagado por</th>
+                            <th>Común</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expensesTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center">Cargando gastos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Gasto</h2>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId" name="editId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editType">Tipo de Gasto *</label>
+                        <select id="editType" name="editType" required>
+                            <option value="fijo">Fijo</option>
+                            <option value="variable">Variable</option>
+                            <option value="diario">Diario</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editCategory">Categoría *</label>
+                        <select id="editCategory" name="editCategory" required>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editAmount">Monto (€) *</label>
+                        <input type="number" id="editAmount" name="editAmount" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editDate">Fecha *</label>
+                        <input type="date" id="editDate" name="editDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editPaidBy">Pagado por *</label>
+                        <select id="editPaidBy" name="editPaidBy" required>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="editIsShared" name="editIsShared">
+                            <label for="editIsShared">Aportado a lo común</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDescription">Descripción/Concepto</label>
+                    <textarea id="editDescription" name="editDescription"></textarea>
+                </div>
+
+                <div class="flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/history.js"></script>
+</body>
+</html>

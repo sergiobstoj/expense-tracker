@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingresos - Gestor de Gastos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="nav-brand">💰 Gestor de Gastos</a>
+            <ul class="nav-links">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/" id="navAddExpense">+ Gasto</a></li>
+                <li><a href="/incomes.html" class="active">Ingresos</a></li>
+                <li><a href="/history.html">Historial</a></li>
+                <li><a href="/reports.html">Reportes</a></li>
+                <li><a href="/settings.html">Configuración</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Registrar Ingreso</h1>
+            <p>Registra tus ingresos mensuales, extras y freelance</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="card">
+            <form id="incomeForm">
+                <div class="form-grid">
+                    <!-- Monto -->
+                    <div class="form-group">
+                        <label for="amount">Monto (€) *</label>
+                        <input type="number" id="amount" name="amount" step="0.01" min="0" required placeholder="0.00" autofocus>
+                    </div>
+
+                    <!-- Fecha -->
+                    <div class="form-group">
+                        <label for="date">Fecha *</label>
+                        <input type="date" id="date" name="date" required>
+                    </div>
+
+                    <!-- Recibido por -->
+                    <div class="form-group">
+                        <label for="receivedBy">Recibido por *</label>
+                        <select id="receivedBy" name="receivedBy" required>
+                            <option value="">Selecciona...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Category Buttons -->
+                <div style="margin-bottom: 1rem;">
+                    <label>Categoría *</label>
+                    <div id="quickIncomeCategoryButtons" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">
+                        <!-- Buttons will be populated dynamically -->
+                    </div>
+                    <select id="category" name="category" required style="margin-top: 0.5rem; display: none;">
+                        <option value="">Selecciona...</option>
+                    </select>
+                </div>
+
+                <!-- Descripción/Concepto -->
+                <div class="form-group">
+                    <label for="description">Descripción/Concepto</label>
+                    <textarea id="description" name="description" placeholder="Ej: Salario mensual diciembre, Proyecto freelance cliente X"></textarea>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-success">Guardar Ingreso</button>
+                    <button type="button" id="btnReset" class="btn btn-secondary">Limpiar</button>
+                </div>
+            </form>
+        </div>
+
+        <style>
+            .quick-income-btn {
+                padding: 0.75rem 1.25rem;
+                border: 2px solid #d1fae5;
+                border-radius: 0.5rem;
+                background: white;
+                cursor: pointer;
+                font-size: 0.95rem;
+                transition: all 0.2s;
+                color: #065f46;
+            }
+            
+            .quick-income-btn:hover {
+                border-color: #10b981;
+                background: #d1fae5;
+            }
+            
+            .quick-income-btn.active {
+                border-color: #10b981;
+                background: #10b981;
+                color: white;
+            }
+        </style>
+
+        <!-- Últimos ingresos registrados -->
+        <div class="card">
+            <div class="card-header">Últimos Ingresos Registrados</div>
+            <div class="table-container">
+                <table id="recentIncomesTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Categoría</th>
+                            <th>Monto</th>
+                            <th>Recibido por</th>
+                            <th>Descripción</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentIncomesBody">
+                        <tr>
+                            <td colspan="6" class="text-center">Cargando ingresos recientes...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar ingreso -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Ingreso</h2>
+                <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId" name="editId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="editCategory">Categoría *</label>
+                        <select id="editCategory" name="editCategory" required>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editAmount">Monto (€) *</label>
+                        <input type="number" id="editAmount" name="editAmount" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editDate">Fecha *</label>
+                        <input type="date" id="editDate" name="editDate" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editReceivedBy">Recibido por *</label>
+                        <select id="editReceivedBy" name="editReceivedBy" required>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editDescription">Descripción/Concepto</label>
+                    <textarea id="editDescription" name="editDescription"></textarea>
+                </div>
+
+                <div class="flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/incomes.js"></script>
+</body>
+</html>

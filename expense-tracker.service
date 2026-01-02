@@ -1,0 +1,19 @@
+[Unit]
+Description=Expense Tracker - Sistema de Gastos
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/path/to/expense-tracker
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+
+# Logging
+StandardOutput=append:/var/log/expense-tracker.log
+StandardError=append:/var/log/expense-tracker-error.log
+
+[Install]
+WantedBy=multi-user.target

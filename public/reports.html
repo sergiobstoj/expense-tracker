@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Gestor de Gastos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="nav-brand">💰 Gestor de Gastos</a>
+            <ul class="nav-links">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/" id="navAddExpense">+ Gasto</a></li>
+                <li><a href="/incomes.html">+ Ingreso</a></li>
+                <li><a href="/history.html">Historial</a></li>
+                <li><a href="/reports.html" class="active">Reportes</a></li>
+                <li><a href="/settings.html">Configuración</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Reportes y Análisis</h1>
+            <p>Visualiza tus gastos y el balance mensual</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Month Selector -->
+        <div class="card">
+            <div class="form-group">
+                <label for="reportMonth">Selecciona el mes a analizar</label>
+                <select id="reportMonth" style="max-width: 300px;">
+                    <option value="">Cargando meses...</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="card">
+            <div class="card-header">Balance del Mes</div>
+            <div id="balanceContainer">
+                <p class="text-center">Selecciona un mes para ver el balance</p>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">
+                <div class="stat-label" style="color: rgba(255,255,255,0.9);">Ingresos del Mes</div>
+                <div class="stat-value" id="monthIncome" style="color: white;">€0.00</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
+                <div class="stat-label" style="color: rgba(255,255,255,0.9);">Gastos del Mes</div>
+                <div class="stat-value" id="monthTotal" style="color: white;">€0.00</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                <div class="stat-label" style="color: rgba(255,255,255,0.9);">Balance Neto</div>
+                <div class="stat-value" id="monthBalance" style="color: white;">€0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Gastos Comunes</div>
+                <div class="stat-value" id="monthShared">€0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Gastos Personales</div>
+                <div class="stat-value" id="monthPersonal">€0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Cantidad de Transacciones</div>
+                <div class="stat-value" id="monthCount">0</div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+            <!-- Income vs Expenses -->
+            <div class="card">
+                <div class="card-header">Ingresos vs Gastos</div>
+                <canvas id="chartIncomeExpenses"></canvas>
+            </div>
+
+            <!-- Expenses by Type -->
+            <div class="card">
+                <div class="card-header">Gastos por Tipo</div>
+                <canvas id="chartByType"></canvas>
+            </div>
+
+            <!-- Expenses by Person -->
+            <div class="card">
+                <div class="card-header">Gastos por Persona</div>
+                <canvas id="chartByPerson"></canvas>
+            </div>
+
+            <!-- Shared vs Personal -->
+            <div class="card">
+                <div class="card-header">Común vs Personal</div>
+                <canvas id="chartSharedPersonal"></canvas>
+            </div>
+
+            <!-- Income by Person -->
+            <div class="card">
+                <div class="card-header">Ingresos por Persona</div>
+                <canvas id="chartIncomeByPerson"></canvas>
+            </div>
+
+            <!-- Daily Trend -->
+            <div class="card">
+                <div class="card-header">Evolución Diaria (Gastos)</div>
+                <canvas id="chartDailyTrend"></canvas>
+            </div>
+        </div>
+
+        <!-- Categories Breakdown -->
+        <div class="card">
+            <div class="card-header">Desglose por Categorías</div>
+            <div class="table-container">
+                <table id="categoriesTable">
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Categoría</th>
+                            <th>Cantidad</th>
+                            <th>Total</th>
+                            <th>Promedio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTableBody">
+                        <tr>
+                            <td colspan="5" class="text-center">Selecciona un mes</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/reports.js"></script>
+</body>
+</html>
