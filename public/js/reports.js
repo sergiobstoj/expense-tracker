@@ -134,19 +134,19 @@ function updateBalance(monthExpenses, selectedMonth) {
         const isPositive = personBalance.balance >= 0;
         
         html += `
-            <div style="padding: 1.5rem; background: ${isPositive ? '#d1fae5' : '#fee2e2'}; border-radius: 0.5rem;">
-                <h3 style="margin-bottom: 1rem; font-size: 1.25rem;">${person}</h3>
+            <div style="padding: 1.5rem; background: ${isPositive ? '#d1fae5' : '#fee2e2'}; border-radius: 0.5rem; color: #1f2937;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.25rem; color: #1f2937;">${person}</h3>
                 <div style="margin-bottom: 0.5rem;">
                     <span style="color: #6b7280;">Porcentaje:</span>
-                    <strong>${percentages[person]}%</strong>
+                    <strong style="color: #1f2937;">${percentages[person]}%</strong>
                 </div>
                 <div style="margin-bottom: 0.5rem;">
                     <span style="color: #6b7280;">Pagó en común:</span>
-                    <strong>${formatCurrency(personBalance.paid)}</strong>
+                    <strong style="color: #1f2937;">${formatCurrency(personBalance.paid)}</strong>
                 </div>
                 <div style="margin-bottom: 0.5rem;">
                     <span style="color: #6b7280;">Debería pagar:</span>
-                    <strong>${formatCurrency(personBalance.shouldPay)}</strong>
+                    <strong style="color: #1f2937;">${formatCurrency(personBalance.shouldPay)}</strong>
                 </div>
                 <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid rgba(0,0,0,0.1);">
                     <span style="color: #6b7280;">Balance:</span>
@@ -170,19 +170,19 @@ function updateBalance(monthExpenses, selectedMonth) {
     
     if (Math.abs(balance1) > 0.01) {
         html += `
-            <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-radius: 0.5rem; text-align: center;">
-                <strong style="font-size: 1.25rem;">💰 Para equilibrar:</strong>
-                <p style="margin-top: 0.5rem; font-size: 1.125rem;">
-                    ${balance1 < 0 ? person1 : person2} debe pagar 
-                    <strong>${formatCurrency(Math.abs(balance1))}</strong>
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-radius: 0.5rem; text-align: center; color: #1f2937;">
+                <strong style="font-size: 1.25rem; color: #1f2937;">💰 Para equilibrar:</strong>
+                <p style="margin-top: 0.5rem; font-size: 1.125rem; color: #1f2937;">
+                    ${balance1 < 0 ? person1 : person2} debe pagar
+                    <strong style="color: #1f2937;">${formatCurrency(Math.abs(balance1))}</strong>
                     a ${balance1 < 0 ? person2 : person1}
                 </p>
             </div>
         `;
     } else {
         html += `
-            <div style="margin-top: 2rem; padding: 1.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center;">
-                <strong style="font-size: 1.25rem;">✅ ¡Cuentas equilibradas!</strong>
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center; color: #1f2937;">
+                <strong style="font-size: 1.25rem; color: #1f2937;">✅ ¡Cuentas equilibradas!</strong>
             </div>
         `;
     }

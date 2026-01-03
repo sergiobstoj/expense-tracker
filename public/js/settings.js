@@ -246,6 +246,19 @@ function setupEventHandlers() {
     document.getElementById('monthToEdit').addEventListener('change', handleMonthSelectChange);
     document.getElementById('btnSaveMonthPercentages').addEventListener('click', handleSaveMonthPercentages);
 
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        // Set initial state
+        themeToggle.checked = getTheme() === 'dark';
+
+        // Add change listener
+        themeToggle.addEventListener('change', (e) => {
+            const newTheme = e.target.checked ? 'dark' : 'light';
+            setTheme(newTheme);
+        });
+    }
+
     // Export buttons
     document.getElementById('btnExportAll').addEventListener('click', exportAllData);
     document.getElementById('btnExportCSV').addEventListener('click', exportCSVData);

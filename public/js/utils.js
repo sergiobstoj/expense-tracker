@@ -1,6 +1,28 @@
 // API Base URL - Relative URL works in local network
 const API_BASE = '/api';
 
+// Theme Management
+(function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+})();
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+}
+
+function getTheme() {
+    return localStorage.getItem('theme') || 'light';
+}
+
+function toggleTheme() {
+    const currentTheme = getTheme();
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    return newTheme;
+}
+
 // Utility functions for API calls
 const api = {
     async get(endpoint) {

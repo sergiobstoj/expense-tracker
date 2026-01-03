@@ -2,6 +2,7 @@ let categories = {};
 let config = {};
 let expenses = [];
 let incomes = [];
+let settlements = [];
 let charts = {};
 
 // Initialize page
@@ -11,7 +12,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadCategories(),
             loadConfig(),
             loadExpenses(),
-            loadIncomes()
+            loadIncomes(),
+            loadSettlements()
         ]);
 
         setupMonthSelector();
@@ -45,6 +47,10 @@ async function loadIncomes() {
     incomes = await api.get('/incomes');
 }
 
+async function loadSettlements() {
+    settlements = await api.get('/settlements');
+}
+
 function setupMonthSelector() {
     const expenseMonths = getUniqueMonths(expenses);
     const incomeMonths = getUniqueMonths(incomes);
@@ -70,6 +76,7 @@ function setupEventHandlers() {
     });
     document.getElementById('quickExpenseForm').addEventListener('submit', handleQuickExpenseSubmit);
     document.getElementById('qType').addEventListener('change', handleQuickTypeChange);
+    document.getElementById('settlementForm').addEventListener('submit', handleSettlementSubmit);
 }
 
 function updateDashboard() {
@@ -96,30 +103,108 @@ function clearDashboard() {
     document.getElementById('dashShared').textContent = '€0.00';
     document.getElementById('dashPersonal').textContent = '€0.00';
     document.getElementById('dashSavings').textContent = '0%';
+    document.getElementById('dashDailyAvg').textContent = '€0.00';
+    document.getElementById('dashDailyAvgInfo').textContent = '';
+    document.getElementById('dashProjection').textContent = '€0.00';
+    document.getElementById('dashProjectionInfo').textContent = '';
+    document.getElementById('dashTopCategory').textContent = '-';
+    document.getElementById('dashTopCategoryAmount').textContent = '';
     document.getElementById('balanceContainer').innerHTML = '<p class="text-center">Selecciona un mes</p>';
-    document.getElementById('recentActivityBody').innerHTML = '<tr><td colspan="5" class="text-center">Selecciona un mes</td></tr>';
-    
+    document.getElementById('recentActivityBody').innerHTML = '<tr><td colspan="7" class="text-center">Selecciona un mes</td></tr>';
+    document.getElementById('transactionCount').textContent = '';
+
     Object.values(charts).forEach(chart => chart.destroy());
     charts = {};
 }
 
 function updateStats(monthExpenses, monthIncomes) {
     const expenseTotals = calculateTotals(monthExpenses);
-    
+
     let totalIncome = 0;
     monthIncomes.forEach(income => {
         totalIncome += parseFloat(income.amount);
     });
-    
+
     const balance = totalIncome - expenseTotals.total;
     const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100).toFixed(1) : 0;
-    
+
     document.getElementById('dashIncome').textContent = formatCurrency(totalIncome);
     document.getElementById('dashExpenses').textContent = formatCurrency(expenseTotals.total);
     document.getElementById('dashBalance').textContent = formatCurrency(balance);
     document.getElementById('dashShared').textContent = formatCurrency(expenseTotals.shared);
     document.getElementById('dashPersonal').textContent = formatCurrency(expenseTotals.personal);
     document.getElementById('dashSavings').textContent = savingsRate + '%';
+
+    // Compare with previous month and enhanced metrics
+    const selectedMonth = document.getElementById('dashboardMonth').value;
+    if (selectedMonth) {
+        const previousMonth = getPreviousMonth(selectedMonth);
+        const prevMonthExpenses = filterExpensesByMonth(expenses, previousMonth);
+        const prevMonthIncomes = filterExpensesByMonth(incomes, previousMonth);
+
+        if (prevMonthExpenses.length > 0 || prevMonthIncomes.length > 0) {
+            const prevExpenseTotals = calculateTotals(prevMonthExpenses);
+            let prevTotalIncome = 0;
+            prevMonthIncomes.forEach(income => {
+                prevTotalIncome += parseFloat(income.amount);
+            });
+            const prevBalance = prevTotalIncome - prevExpenseTotals.total;
+
+            // Calculate trends
+            displayTrend('dashIncomeTrend', totalIncome, prevTotalIncome);
+            displayTrend('dashExpensesTrend', expenseTotals.total, prevExpenseTotals.total, true); // inverted for expenses
+            displayTrend('dashBalanceTrend', balance, prevBalance);
+        } else {
+            document.getElementById('dashIncomeTrend').textContent = '';
+            document.getElementById('dashExpensesTrend').textContent = '';
+            document.getElementById('dashBalanceTrend').textContent = '';
+        }
+    }
+
+    // Enhanced metrics
+    if (selectedMonth && monthExpenses.length > 0) {
+        // Calculate daily average
+        const monthStart = new Date(selectedMonth + '-01');
+        const today = new Date();
+        const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+
+        const now = new Date();
+        const isCurrentMonth = monthStart.getMonth() === now.getMonth() && monthStart.getFullYear() === now.getFullYear();
+        const daysElapsed = isCurrentMonth ? now.getDate() : monthEnd.getDate();
+
+        const dailyAvg = expenseTotals.total / daysElapsed;
+        document.getElementById('dashDailyAvg').textContent = formatCurrency(dailyAvg);
+        document.getElementById('dashDailyAvgInfo').textContent = `${daysElapsed} día${daysElapsed !== 1 ? 's' : ''}`;
+
+        // Calculate projection for end of month
+        if (isCurrentMonth) {
+            const daysInMonth = monthEnd.getDate();
+            const daysRemaining = daysInMonth - daysElapsed;
+            // Projection = current expenses + (daily avg * days remaining)
+            const projection = expenseTotals.total + (dailyAvg * daysRemaining);
+            document.getElementById('dashProjection').textContent = formatCurrency(projection);
+            document.getElementById('dashProjectionInfo').textContent = `${daysRemaining} día${daysRemaining !== 1 ? 's' : ''} restantes`;
+        } else {
+            document.getElementById('dashProjection').textContent = formatCurrency(expenseTotals.total);
+            document.getElementById('dashProjectionInfo').textContent = 'Mes cerrado';
+        }
+
+        // Find top category
+        const categoryTotals = {};
+        monthExpenses.forEach(expense => {
+            const key = expense.category;
+            if (!categoryTotals[key]) {
+                categoryTotals[key] = 0;
+            }
+            categoryTotals[key] += parseFloat(expense.amount);
+        });
+
+        if (Object.keys(categoryTotals).length > 0) {
+            const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('dashTopCategory').textContent = topCategory[0];
+            document.getElementById('dashTopCategoryAmount').textContent = formatCurrency(topCategory[1]);
+        }
+    }
 }
 
 function updateBalance(monthExpenses, selectedMonth) {
@@ -127,29 +212,42 @@ function updateBalance(monthExpenses, selectedMonth) {
     const container = document.getElementById('balanceContainer');
 
     const persons = config.persons;
-    // Get percentages for the selected month
     const percentages = getMonthPercentages(config, selectedMonth);
-    
+
+    // Calculate settlements for this month
+    const monthSettlements = settlements.filter(s => s.month === selectedMonth);
+    let adjustedBalance = { ...balance };
+
+    // Adjust balance with settlements
+    monthSettlements.forEach(settlement => {
+        if (adjustedBalance[settlement.from]) {
+            adjustedBalance[settlement.from].balance += settlement.amount;
+        }
+        if (adjustedBalance[settlement.to]) {
+            adjustedBalance[settlement.to].balance -= settlement.amount;
+        }
+    });
+
     let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">';
-    
+
     persons.forEach(person => {
-        const personBalance = balance[person];
+        const personBalance = adjustedBalance[person];
         const isPositive = personBalance.balance >= 0;
-        
+
         html += `
-            <div style="padding: 1.5rem; background: ${isPositive ? '#d1fae5' : '#fee2e2'}; border-radius: 0.5rem;">
-                <h3 style="margin-bottom: 1rem; font-size: 1.25rem;">${person}</h3>
+            <div style="padding: 1.5rem; background: ${isPositive ? '#d1fae5' : '#fee2e2'}; border-radius: 0.5rem; color: #1f2937;">
+                <h3 style="margin-bottom: 1rem; font-size: 1.25rem; color: #1f2937;">${person}</h3>
                 <div style="margin-bottom: 0.5rem;">
                     <span style="color: #6b7280;">Porcentaje:</span>
-                    <strong>${percentages[person]}%</strong>
+                    <strong style="color: #1f2937;">${percentages[person]}%</strong>
                 </div>
                 <div style="margin-bottom: 0.5rem;">
                     <span style="color: #6b7280;">Pagó en común:</span>
-                    <strong>${formatCurrency(personBalance.paid)}</strong>
+                    <strong style="color: #1f2937;">${formatCurrency(personBalance.paid)}</strong>
                 </div>
                 <div style="margin-bottom: 0.5rem;">
                     <span style="color: #6b7280;">Debería pagar:</span>
-                    <strong>${formatCurrency(personBalance.shouldPay)}</strong>
+                    <strong style="color: #1f2937;">${formatCurrency(personBalance.shouldPay)}</strong>
                 </div>
                 <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid rgba(0,0,0,0.1);">
                     <span style="color: #6b7280;">Balance:</span>
@@ -160,32 +258,58 @@ function updateBalance(monthExpenses, selectedMonth) {
             </div>
         `;
     });
-    
+
     html += '</div>';
-    
+
+    // Show settlements history if any
+    if (monthSettlements.length > 0) {
+        html += `
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #f0fdf4; border-radius: 0.5rem; border: 2px solid #10b981; color: #1f2937;">
+                <strong style="font-size: 1.125rem; display: block; margin-bottom: 1rem; color: #1f2937;">💸 Pagos Registrados:</strong>
+                ${monthSettlements.map(s => `
+                    <div style="padding: 0.75rem; background: white; border-radius: 0.375rem; margin-bottom: 0.5rem; color: #1f2937;">
+                        <strong style="color: #1f2937;">${s.from}</strong> pagó <strong style="color: #1f2937;">${formatCurrency(s.amount)}</strong> a <strong style="color: #1f2937;">${s.to}</strong>
+                        <span style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                            ${formatDate(s.date)}${s.description ? ' - ' + s.description : ''}
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
     const person1 = persons[0];
     const person2 = persons[1];
-    const balance1 = balance[person1].balance;
-    
+    const balance1 = adjustedBalance[person1].balance;
+
     if (Math.abs(balance1) > 0.01) {
+        const debtor = balance1 < 0 ? person1 : person2;
+        const creditor = balance1 < 0 ? person2 : person1;
         html += `
-            <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-radius: 0.5rem; text-align: center;">
-                <strong style="font-size: 1.25rem;">💰 Para equilibrar:</strong>
-                <p style="margin-top: 0.5rem; font-size: 1.125rem;">
-                    ${balance1 < 0 ? person1 : person2} debe pagar 
-                    <strong>${formatCurrency(Math.abs(balance1))}</strong>
-                    a ${balance1 < 0 ? person2 : person1}
-                </p>
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-radius: 0.5rem; color: #1f2937;">
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <strong style="font-size: 1.25rem; color: #1f2937;">💰 Para equilibrar:</strong>
+                    <p style="margin-top: 0.5rem; font-size: 1.125rem; color: #1f2937;">
+                        ${debtor} debe pagar
+                        <strong style="color: #1f2937;">${formatCurrency(Math.abs(balance1))}</strong>
+                        a ${creditor}
+                    </p>
+                </div>
+                <div style="text-align: center;">
+                    <button class="btn btn-success" onclick="openSettlementModal('${selectedMonth}', '${debtor}', '${creditor}', ${balance1})">
+                        Registrar Pago
+                    </button>
+                </div>
             </div>
         `;
     } else {
         html += `
-            <div style="margin-top: 2rem; padding: 1.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center;">
-                <strong style="font-size: 1.25rem;">✅ ¡Cuentas equilibradas!</strong>
+            <div style="margin-top: 2rem; padding: 1.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center; color: #1f2937;">
+                <strong style="font-size: 1.25rem; color: #1f2937;">✅ ¡Cuentas equilibradas!</strong>
             </div>
         `;
     }
-    
+
     container.innerHTML = html;
 }
 
@@ -297,17 +421,21 @@ function updateCharts(monthExpenses, monthIncomes) {
 
 function displayRecentActivity(monthExpenses, monthIncomes) {
     const tbody = document.getElementById('recentActivityBody');
-    
+    const countElement = document.getElementById('transactionCount');
+
     const allActivity = [
         ...monthExpenses.map(e => ({ ...e, activityType: 'expense' })),
         ...monthIncomes.map(i => ({ ...i, activityType: 'income' }))
-    ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
-    
+    ].sort((a, b) => new Date(b.date) - new Date(a.date)); // Removed slice(0, 10) to show all
+
     if (allActivity.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay actividad en este mes</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay transacciones en este mes</td></tr>';
+        countElement.textContent = '0 transacciones';
         return;
     }
-    
+
+    countElement.textContent = `${allActivity.length} transacción${allActivity.length !== 1 ? 'es' : ''}`;
+
     tbody.innerHTML = allActivity.map(item => `
         <tr>
             <td>${formatDate(item.date)}</td>
@@ -317,12 +445,21 @@ function displayRecentActivity(monthExpenses, monthIncomes) {
                 </span>
             </td>
             <td>${item.category}</td>
+            <td>${item.description || '-'}</td>
             <td>
                 <strong style="color: ${item.activityType === 'income' ? '#10b981' : '#ef4444'};">
                     ${item.activityType === 'income' ? '+' : '-'}${formatCurrency(item.amount)}
                 </strong>
             </td>
             <td>${item.activityType === 'income' ? item.receivedBy : item.paidBy}</td>
+            <td>
+                ${item.activityType === 'income' ?
+                    '<span class="badge badge-shared">Ingreso</span>' :
+                    (item.isShared ?
+                        '<span class="badge badge-shared">Común</span>' :
+                        '<span class="badge badge-personal">Personal</span>')
+                }
+            </td>
         </tr>
     `).join('');
 }
@@ -459,3 +596,87 @@ document.getElementById('quickExpenseModal').addEventListener('click', (e) => {
         closeQuickExpense();
     }
 });
+
+// Settlement modal functions
+function openSettlementModal(month, from, to, amount) {
+    document.getElementById('settlementMonth').value = month;
+    document.getElementById('settlementFrom').value = from;
+    document.getElementById('settlementTo').value = to;
+    document.getElementById('settlementAmount').value = Math.abs(amount).toFixed(2);
+    document.getElementById('settlementInfo').textContent = `${from} debe pagar ${formatCurrency(Math.abs(amount))} a ${to}`;
+    setTodayAsDefault('settlementDate');
+
+    document.getElementById('settlementModal').classList.add('active');
+
+    setTimeout(() => {
+        document.getElementById('settlementAmount').focus();
+    }, 100);
+}
+
+function closeSettlementModal() {
+    document.getElementById('settlementModal').classList.remove('active');
+    document.getElementById('settlementForm').reset();
+}
+
+async function handleSettlementSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const settlement = {
+        month: formData.get('month'),
+        from: formData.get('from'),
+        to: formData.get('to'),
+        amount: parseFloat(formData.get('amount')),
+        date: formData.get('date'),
+        description: formData.get('description') || ''
+    };
+
+    try {
+        const newSettlement = await api.post('/settlements', settlement);
+        settlements.push(newSettlement);
+
+        showAlert('¡Pago registrado exitosamente!', 'success');
+        closeSettlementModal();
+        updateDashboard();
+    } catch (error) {
+        console.error('Error saving settlement:', error);
+        showAlert(`Error al registrar el pago: ${error.message}`, 'error');
+    }
+}
+
+document.getElementById('settlementModal').addEventListener('click', (e) => {
+    if (e.target.id === 'settlementModal') {
+        closeSettlementModal();
+    }
+});
+
+// Helper functions for trends
+function getPreviousMonth(monthString) {
+    const [year, month] = monthString.split('-').map(Number);
+    const date = new Date(year, month - 1, 1);
+    date.setMonth(date.getMonth() - 1);
+    const prevYear = date.getFullYear();
+    const prevMonth = String(date.getMonth() + 1).padStart(2, '0');
+    return `${prevYear}-${prevMonth}`;
+}
+
+function displayTrend(elementId, current, previous, inverted = false) {
+    const element = document.getElementById(elementId);
+    if (previous === 0) {
+        element.textContent = '';
+        return;
+    }
+
+    const change = ((current - previous) / previous) * 100;
+    const absChange = Math.abs(change);
+
+    // For expenses, lower is better, so we invert the logic
+    const isPositive = inverted ? change < 0 : change > 0;
+    const arrow = isPositive ? '↑' : '↓';
+
+    if (Math.abs(change) < 0.5) {
+        element.textContent = '→ Sin cambios';
+    } else {
+        element.textContent = `${arrow} ${absChange.toFixed(1)}% vs mes anterior`;
+    }
+}

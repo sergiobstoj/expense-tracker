@@ -13,6 +13,7 @@ const createExpensesRouter = require('./src/routes/expenses');
 const createIncomesRouter = require('./src/routes/incomes');
 const { createCategoriesRouter, createIncomeCategoriesRouter } = require('./src/routes/categories');
 const createConfigRouter = require('./src/routes/config');
+const createSettlementsRouter = require('./src/routes/settlements');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,7 +39,7 @@ async function initializeData() {
         await fs.mkdir(BACKUP_DIR, { recursive: true });
 
         // Initialize default files if they don't exist
-        const files = ['expenses.json', 'incomes.json', 'categories.json', 'income-categories.json', 'config.json'];
+        const files = ['expenses.json', 'incomes.json', 'categories.json', 'income-categories.json', 'config.json', 'settlements.json'];
 
         for (const file of files) {
             try {
@@ -64,6 +65,7 @@ app.use('/api/incomes', createIncomesRouter(fileService));
 app.use('/api/categories', createCategoriesRouter(fileService));
 app.use('/api/income-categories', createIncomeCategoriesRouter(fileService));
 app.use('/api/config', createConfigRouter(fileService));
+app.use('/api/settlements', createSettlementsRouter(fileService));
 
 // Start server
 initializeData().then(async () => {
