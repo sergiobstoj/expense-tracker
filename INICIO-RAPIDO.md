@@ -40,6 +40,11 @@ Abre tu navegador en: **http://localhost:3000**
    - Completa el formulario
    - ¡Listo!
 
+4. **Personaliza el tema (opcional)**
+   - Ve a Configuración
+   - Activa el modo oscuro si prefieres
+   - Tu preferencia se guardará automáticamente
+
 ## Estructura de carpetas
 
 ```
@@ -70,6 +75,10 @@ expense-tracker/
 🎯 Registra gastos en segundos
 📊 Reportes visuales con gráficos
 💰 Balance automático (quién debe a quién)
+💸 Sistema de liquidaciones entre personas
+📋 Historial unificado de gastos e ingresos
+🔍 Búsqueda avanzada con múltiples filtros
+🌙 Modo oscuro con toggle
 📁 Exporta a CSV/JSON
 🔒 100% local y privado
 

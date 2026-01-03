@@ -1,5 +1,61 @@
 # Changelog
 
+## [Features Mayores - 2026-01-03]
+
+### 🎨 Modo Oscuro
+- **Toggle de tema** en página de Configuración
+- **CSS Variables** para cambio dinámico de colores
+- **Persistencia** con localStorage
+- **Paleta optimizada** para legibilidad en ambos modos
+- **Contraste mejorado** en gráficos y textos
+
+### 💰 Sistema de Liquidaciones
+- **Registro de pagos** entre personas
+- **Modal dedicado** en Dashboard
+- **API REST completa** (`/api/settlements`)
+- **Tracking histórico** de liquidaciones
+- **Persistencia** en `data/settlements.json`
+
+### 📊 Métricas Mejoradas (Dashboard)
+- **Promedio de gasto diario** calculado del mes actual
+- **Proyección fin de mes** con fórmula corregida
+- **Top categoría** del mes (mayor gasto)
+- **Comparación mes anterior**:
+  - Indicadores de tendencia (↑/↓)
+  - Porcentaje de cambio
+  - Color según mejora/empeora
+- **Flechas de tendencia** en tarjetas principales
+
+### 📋 Historial Unificado
+- **Tabla única** mostrando gastos e ingresos
+- **Diferenciación visual**:
+  - Ingresos en verde con signo +
+  - Gastos en rojo
+- **Estadísticas integradas**: Total ingresos, gastos y balance neto
+- **CRUD completo para ingresos** desde historial
+- **Modal de edición** específico para ingresos
+
+### 🔍 Filtros Avanzados (Historial)
+- **Tipo de transacción**: Todos, Solo Gastos, Solo Ingresos
+- **Persona**: Unificado (paidBy/receivedBy)
+- **Búsqueda por descripción** (case-insensitive)
+- **Rango de montos** (mínimo/máximo)
+- **Tipo de gasto** (fijo/variable/diario)
+- **Común/Personal** (solo para gastos)
+- **Filtros inteligentes** que se adaptan al tipo seleccionado
+
+### 📑 Tabla Completa en Dashboard
+- **Todas las transacciones** del mes (no solo recientes)
+- **7 columnas** con información detallada
+- **Ordenamiento** por fecha descendente
+
+### 🐛 Correcciones
+- **Fix proyección fin de mes**: Fórmula actualizada a `gastoActual + (promediodiario * díasRestantes)`
+- **Fix contraste dark mode**: Texto forzado a oscuro en secciones con fondo claro
+- **Fix legibilidad**: Balance entre personas y reportes ahora legibles en dark mode
+
+---
+
 ## [Mejoras UX y Docs - 2026-01-02]
 
 ### 🎨 Mejoras de Interfaz

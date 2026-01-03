@@ -10,13 +10,30 @@ Sistema web local para gestión de gastos personales y compartidos con división
 - **Gestión de PINs** modificables desde configuración
 - **Sesiones persistentes** con localStorage
 
+### 🎨 Modo Oscuro
+- **Toggle de tema claro/oscuro** en Configuración
+- **Paleta optimizada** para ambos modos
+- **Persistencia automática** de preferencia
+- **Transiciones suaves** entre temas
+
 ### 📊 Dashboard Interactivo
 - **Vista principal con gráficos** en tiempo real
 - **6 tarjetas de estadísticas**: Ingresos, Gastos, Balance, Común, Personal, Tasa de Ahorro
+- **Comparación con mes anterior**: Indicadores de tendencia (↑/↓) y porcentaje de cambio
+- **Métricas avanzadas**:
+  - Promedio de gasto diario
+  - Proyección fin de mes
+  - Top categoría del mes
 - **4 gráficos visuales**: Income vs Expenses, Por Tipo, Común vs Personal, Ingresos por Persona
 - **Balance visual** entre personas con código de colores
-- **Actividad reciente** (últimos 10 movimientos)
+- **Tabla completa de transacciones** del mes con 7 columnas
 - **Selector de mes** para análisis histórico
+
+### 💰 Sistema de Liquidaciones
+- **Registro de pagos** entre personas
+- **Modal dedicado** para registrar liquidaciones
+- **Tracking histórico** de todos los pagos
+- **Integración con balance** automática
 
 ### 💸 Gestión de Gastos e Ingresos
 - **Registro rápido** con modal y botones de categorías frecuentes
@@ -45,12 +62,25 @@ Sistema web local para gestión de gastos personales y compartidos con división
 - **Exportación** a CSV y JSON
 - **Gráficos históricos**
 
+### 📋 Historial Unificado
+- **Vista consolidada** de gastos e ingresos en una sola tabla
+- **Diferenciación visual**: Ingresos en verde (+), gastos en rojo
+- **CRUD completo**: Editar y eliminar tanto gastos como ingresos
+- **Estadísticas integradas**: Total ingresos, gastos y balance neto
+- **Filtros avanzados**:
+  - Por tipo de transacción (gastos/ingresos/ambos)
+  - Por persona (pagador o receptor)
+  - Búsqueda en descripción
+  - Rango de montos (mín/máx)
+  - Tipo de gasto y común/personal
+
 ### ⚙️ Configuración
 - **Gestión de personas** y porcentajes
 - **Categorías personalizables** con emojis
 - **Gestión de PINs** individual y maestro
 - **Control de meses cerrados**
 - **Exportación completa** de datos
+- **Toggle de modo oscuro/claro**
 
 ## 📋 Requisitos
 
@@ -169,6 +199,17 @@ sudo ufw reload
    - Ve a la sección "Ingresos"
    - Usa los botones rápidos para categorías comunes
    - Los ingresos se reflejan automáticamente en el dashboard
+
+## 🆕 Novedades Recientes (2026-01-03)
+
+- ✨ **Modo oscuro** con persistencia de preferencia
+- 💰 **Sistema de liquidaciones** para registrar pagos entre personas
+- 📊 **Métricas mejoradas**: Promedio diario, proyección fin de mes, top categoría
+- 📈 **Comparación mensual** con indicadores de tendencia
+- 📋 **Historial unificado** mostrando gastos e ingresos en una tabla
+- 🔍 **Filtros avanzados** por tipo de transacción, persona, descripción y monto
+- 📑 **Tabla completa** en Dashboard (todas las transacciones del mes)
+- 🐛 **Correcciones** en proyección y contraste de texto en dark mode
 
 ## 📁 Estructura de Datos
 
@@ -303,6 +344,7 @@ expense-tracker/
 │   ├── categories.json
 │   ├── income-categories.json
 │   ├── config.json
+│   ├── settlements.json   # Liquidaciones entre personas
 │   └── backups/          # Backups automáticos diarios
 └── public/               # Frontend
     ├── index.html         # Página principal
@@ -354,6 +396,7 @@ MIT License - Uso libre para proyectos personales y comerciales.
 ## 🎨 Personalización
 
 Puedes personalizar fácilmente:
+- **Tema**: Modo claro u oscuro desde Configuración
 - **Colores**: Edita las variables CSS en `styles.css`
 - **Nombres de personas**: En Configuración
 - **Categorías**: En Configuración
