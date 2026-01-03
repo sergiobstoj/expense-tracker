@@ -60,9 +60,12 @@ function createExpensesRouter(fileService) {
                 });
             }
 
+            // Convert ID to number for comparison (IDs are stored as numbers)
+            const expenseId = parseInt(req.params.id, 10);
+
             let found = false;
             await fileService.updateJSON('expenses.json', (expenses) => {
-                const index = expenses.findIndex(e => e.id === req.params.id);
+                const index = expenses.findIndex(e => e.id === expenseId);
                 if (index === -1) {
                     return expenses;
                 }
@@ -96,8 +99,11 @@ function createExpensesRouter(fileService) {
     // Delete expense
     router.delete('/:id', async (req, res) => {
         try {
+            // Convert ID to number for comparison (IDs are stored as numbers)
+            const expenseId = parseInt(req.params.id, 10);
+
             await fileService.updateJSON('expenses.json', (expenses) => {
-                return expenses.filter(e => e.id !== req.params.id);
+                return expenses.filter(e => e.id !== expenseId);
             });
 
             res.json({ success: true });

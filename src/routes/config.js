@@ -4,33 +4,41 @@ const { validateConfig } = require('../utils/validators');
 function createConfigRouter(fileService) {
     const router = express.Router();
 
-    // Get config with automatic migration to monthlyPercentages
+    // Get config with automatic migration and sync of monthlyPercentages
     router.get('/', async (req, res) => {
         try {
             let config = await fileService.readJSON('config.json');
+            let configChanged = false;
 
             // Migration: Add monthlyPercentages if it doesn't exist
             if (!config.monthlyPercentages) {
                 console.log('📦 Migrando config: creando monthlyPercentages...');
-
-                // Read all expenses and incomes to get unique months
-                const expenses = await fileService.readJSON('expenses.json');
-                const incomes = await fileService.readJSON('incomes.json');
-
-                // Get all unique months
-                const months = new Set();
-                expenses.forEach(e => months.add(e.date.substring(0, 7)));
-                incomes.forEach(i => months.add(i.date.substring(0, 7)));
-
-                // Create monthlyPercentages with current splitPercentages for all existing months
                 config.monthlyPercentages = {};
-                months.forEach(month => {
-                    config.monthlyPercentages[month] = { ...config.splitPercentages };
-                });
+                configChanged = true;
+            }
 
-                // Save migrated config
+            // Always sync monthlyPercentages with existing months in expenses/incomes
+            const expenses = await fileService.readJSON('expenses.json');
+            const incomes = await fileService.readJSON('incomes.json');
+
+            // Get all unique months from expenses and incomes
+            const existingMonths = new Set();
+            expenses.forEach(e => existingMonths.add(e.date.substring(0, 7)));
+            incomes.forEach(i => existingMonths.add(i.date.substring(0, 7)));
+
+            // Add missing months to monthlyPercentages
+            existingMonths.forEach(month => {
+                if (!config.monthlyPercentages[month]) {
+                    console.log(`📅 Agregando nuevo mes: ${month}`);
+                    config.monthlyPercentages[month] = { ...config.splitPercentages };
+                    configChanged = true;
+                }
+            });
+
+            // Save config if it was changed
+            if (configChanged) {
                 await fileService.writeJSON('config.json', config);
-                console.log(`✅ Migración completada: ${months.size} meses configurados`);
+                console.log(`✅ Configuración sincronizada: ${existingMonths.size} meses totales`);
             }
 
             res.json(config);

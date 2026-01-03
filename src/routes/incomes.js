@@ -60,9 +60,12 @@ function createIncomesRouter(fileService) {
                 });
             }
 
+            // Convert ID to number for comparison (IDs are stored as numbers)
+            const incomeId = parseInt(req.params.id, 10);
+
             let found = false;
             await fileService.updateJSON('incomes.json', (incomes) => {
-                const index = incomes.findIndex(i => i.id === req.params.id);
+                const index = incomes.findIndex(i => i.id === incomeId);
                 if (index === -1) {
                     return incomes;
                 }
@@ -96,8 +99,11 @@ function createIncomesRouter(fileService) {
     // Delete income
     router.delete('/:id', async (req, res) => {
         try {
+            // Convert ID to number for comparison (IDs are stored as numbers)
+            const incomeId = parseInt(req.params.id, 10);
+
             await fileService.updateJSON('incomes.json', (incomes) => {
-                return incomes.filter(i => i.id !== req.params.id);
+                return incomes.filter(i => i.id !== incomeId);
             });
 
             res.json({ success: true });

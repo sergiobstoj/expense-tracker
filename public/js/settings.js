@@ -739,9 +739,8 @@ async function handleImport() {
                 });
             }
 
-            // Process data
-            let successCount = 0;
-            let errorCount = 0;
+            // PHASE 1: Validate ALL rows first (atomic validation)
+            const validatedRecords = [];
             const errors = [];
 
             for (let i = 0; i < data.length; i++) {
@@ -761,13 +760,22 @@ async function handleImport() {
                             description: row.descripcion || row.description || ''
                         };
 
-                        // Validate
+                        // Validate required fields
                         if (!expense.type || !expense.category || !expense.amount || !expense.date || !expense.paidBy) {
                             throw new Error('Faltan campos requeridos');
                         }
 
-                        await api.post('/expenses', expense);
-                        successCount++;
+                        // Validate amount is a valid number
+                        if (isNaN(expense.amount) || expense.amount <= 0) {
+                            throw new Error('Monto inválido');
+                        }
+
+                        // Validate date format (YYYY-MM-DD)
+                        if (!/^\d{4}-\d{2}-\d{2}$/.test(expense.date)) {
+                            throw new Error('Formato de fecha inválido (debe ser YYYY-MM-DD)');
+                        }
+
+                        validatedRecords.push({ type: 'expense', data: expense });
                     } else {
                         const income = {
                             category: row.categoria || row.category,
@@ -777,32 +785,83 @@ async function handleImport() {
                             description: row.descripcion || row.description || ''
                         };
 
-                        // Validate
+                        // Validate required fields
                         if (!income.category || !income.amount || !income.date || !income.receivedBy) {
                             throw new Error('Faltan campos requeridos');
                         }
 
-                        await api.post('/incomes', income);
-                        successCount++;
+                        // Validate amount is a valid number
+                        if (isNaN(income.amount) || income.amount <= 0) {
+                            throw new Error('Monto inválido');
+                        }
+
+                        // Validate date format (YYYY-MM-DD)
+                        if (!/^\d{4}-\d{2}-\d{2}$/.test(income.date)) {
+                            throw new Error('Formato de fecha inválido (debe ser YYYY-MM-DD)');
+                        }
+
+                        validatedRecords.push({ type: 'income', data: income });
                     }
                 } catch (error) {
-                    errorCount++;
                     errors.push(`Fila ${i + 2}: ${error.message}`);
+                }
+            }
+
+            // If there are ANY errors, abort the entire import
+            if (errors.length > 0) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `
+                    <div style="padding: 1rem; background: #fee2e2; border-radius: 0.375rem;">
+                        <strong>❌ Importación cancelada</strong><br>
+                        Se encontraron ${errors.length} error(es). No se importó ningún registro.<br><br>
+                        <strong>Errores encontrados:</strong><br>
+                        ${errors.join('<br>')}
+                    </div>
+                `;
+                showAlert('Importación cancelada: se encontraron errores en el archivo', 'error');
+                fileInput.value = '';
+                return;
+            }
+
+            // PHASE 2: All rows are valid, now import them
+            let successCount = 0;
+            const importErrors = [];
+
+            for (let i = 0; i < validatedRecords.length; i++) {
+                const record = validatedRecords[i];
+                try {
+                    if (record.type === 'expense') {
+                        await api.post('/expenses', record.data);
+                    } else {
+                        await api.post('/incomes', record.data);
+                    }
+                    successCount++;
+                } catch (error) {
+                    importErrors.push(`Registro ${i + 1}: ${error.message}`);
                 }
             }
 
             // Show results
             resultsDiv.style.display = 'block';
-            resultsDiv.innerHTML = `
-                <div style="padding: 1rem; background: ${errorCount === 0 ? '#d1fae5' : '#fef3c7'}; border-radius: 0.375rem;">
-                    <strong>Resultado de importación:</strong><br>
-                    ✅ ${successCount} registros importados exitosamente<br>
-                    ${errorCount > 0 ? `❌ ${errorCount} registros con errores` : ''}
-                    ${errors.length > 0 ? `<br><br><strong>Errores:</strong><br>${errors.slice(0, 5).join('<br>')}${errors.length > 5 ? '<br>...' : ''}` : ''}
-                </div>
-            `;
-
-            showAlert(`Importación completada: ${successCount} registros importados`, successCount > 0 ? 'success' : 'error');
+            if (importErrors.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div style="padding: 1rem; background: #d1fae5; border-radius: 0.375rem;">
+                        <strong>✅ Importación exitosa</strong><br>
+                        ${successCount} registro(s) importado(s) correctamente.
+                    </div>
+                `;
+                showAlert(`Importación exitosa: ${successCount} registros importados`, 'success');
+            } else {
+                resultsDiv.innerHTML = `
+                    <div style="padding: 1rem; background: #fef3c7; border-radius: 0.375rem;">
+                        <strong>⚠️ Importación parcial</strong><br>
+                        ${successCount} de ${validatedRecords.length} registros importados.<br><br>
+                        <strong>Errores:</strong><br>
+                        ${importErrors.join('<br>')}
+                    </div>
+                `;
+                showAlert(`Importación parcial: ${successCount}/${validatedRecords.length} registros`, 'error');
+            }
 
             // Reload data
             await loadExpenses();
