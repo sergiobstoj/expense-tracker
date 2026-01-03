@@ -259,11 +259,29 @@ function calculateTotals(expenses) {
     return totals;
 }
 
+// Get split percentages for a specific month
+function getMonthPercentages(config, monthString) {
+    // If monthlyPercentages exists and has data for this month, use it
+    if (config.monthlyPercentages && config.monthlyPercentages[monthString]) {
+        return config.monthlyPercentages[monthString];
+    }
+
+    // Otherwise, fall back to default splitPercentages
+    return config.splitPercentages || {};
+}
+
 // Calculate balance (who owes whom)
-function calculateBalance(expenses, config) {
+function calculateBalance(expenses, config, monthString = null) {
     const totals = calculateTotals(expenses);
     const persons = config.persons;
-    const percentages = config.splitPercentages;
+
+    // Get percentages for the specific month or use default
+    let percentages;
+    if (monthString) {
+        percentages = getMonthPercentages(config, monthString);
+    } else {
+        percentages = config.splitPercentages;
+    }
 
     const balance = {};
     persons.forEach(person => {

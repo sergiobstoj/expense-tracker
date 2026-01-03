@@ -74,17 +74,17 @@ function setupEventHandlers() {
 
 function updateDashboard() {
     const selectedMonth = document.getElementById('dashboardMonth').value;
-    
+
     if (!selectedMonth) {
         clearDashboard();
         return;
     }
-    
+
     const monthExpenses = filterExpensesByMonth(expenses, selectedMonth);
     const monthIncomes = filterExpensesByMonth(incomes, selectedMonth);
-    
+
     updateStats(monthExpenses, monthIncomes);
-    updateBalance(monthExpenses);
+    updateBalance(monthExpenses, selectedMonth);
     updateCharts(monthExpenses, monthIncomes);
     displayRecentActivity(monthExpenses, monthIncomes);
 }
@@ -122,12 +122,13 @@ function updateStats(monthExpenses, monthIncomes) {
     document.getElementById('dashSavings').textContent = savingsRate + '%';
 }
 
-function updateBalance(monthExpenses) {
-    const balance = calculateBalance(monthExpenses, config);
+function updateBalance(monthExpenses, selectedMonth) {
+    const balance = calculateBalance(monthExpenses, config, selectedMonth);
     const container = document.getElementById('balanceContainer');
-    
+
     const persons = config.persons;
-    const percentages = config.splitPercentages;
+    // Get percentages for the selected month
+    const percentages = getMonthPercentages(config, selectedMonth);
     
     let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">';
     

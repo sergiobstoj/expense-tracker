@@ -31,11 +31,45 @@
 
         <!-- Personas y Porcentajes -->
         <div class="card">
-            <div class="card-header">Personas y Porcentaje de División</div>
+            <div class="card-header">Personas y Porcentaje de División (Predeterminado)</div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">
+                Define el porcentaje predeterminado que se aplicará a los nuevos meses. Los meses existentes mantienen sus porcentajes históricos.
+            </p>
             <form id="personsForm">
                 <div id="personsContainer"></div>
                 <button type="submit" class="btn btn-primary mt-3">Guardar Cambios</button>
             </form>
+        </div>
+
+        <!-- Porcentajes Mensuales -->
+        <div class="card">
+            <div class="card-header">Porcentajes por Mes</div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">
+                Configura porcentajes específicos para cada mes. Esto permite ajustar la división de gastos sin afectar los reportes históricos.
+            </p>
+
+            <div class="mb-3">
+                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Meses Configurados</h3>
+                <div id="monthlyPercentagesContainer">
+                    <p style="color: #6b7280; font-style: italic;">Cargando...</p>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Editar Porcentajes de un Mes</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="monthToEdit">Selecciona el mes</label>
+                        <select id="monthToEdit" style="max-width: 300px;">
+                            <option value="">Selecciona un mes...</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="monthPercentagesForm" style="display: none; margin-top: 1rem;">
+                    <div id="monthPercentagesInputs"></div>
+                    <button type="button" id="btnSaveMonthPercentages" class="btn btn-primary mt-2">Guardar Porcentajes del Mes</button>
+                </div>
+            </div>
         </div>
 
         <!-- PIN Management -->

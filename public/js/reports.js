@@ -70,17 +70,17 @@ function setupEventHandlers() {
 
 function updateReport() {
     const selectedMonth = document.getElementById('reportMonth').value;
-    
+
     if (!selectedMonth) {
         clearReport();
         return;
     }
-    
+
     const monthExpenses = filterExpensesByMonth(expenses, selectedMonth);
     const monthIncomes = filterExpensesByMonth(incomes, selectedMonth);
-    
+
     updateStats(monthExpenses, monthIncomes);
-    updateBalance(monthExpenses);
+    updateBalance(monthExpenses, selectedMonth);
     updateCharts(monthExpenses, monthIncomes);
     updateCategoriesTable(monthExpenses);
 }
@@ -119,12 +119,13 @@ function updateStats(monthExpenses, monthIncomes) {
     document.getElementById('monthCount').textContent = monthExpenses.length + monthIncomes.length;
 }
 
-function updateBalance(monthExpenses) {
-    const balance = calculateBalance(monthExpenses, config);
+function updateBalance(monthExpenses, selectedMonth) {
+    const balance = calculateBalance(monthExpenses, config, selectedMonth);
     const container = document.getElementById('balanceContainer');
-    
+
     const persons = config.persons;
-    const percentages = config.splitPercentages;
+    // Get percentages for the selected month
+    const percentages = getMonthPercentages(config, selectedMonth);
     
     let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">';
     

@@ -87,6 +87,28 @@ function validateConfig(config) {
         }
     }
 
+    // Validate monthlyPercentages if present (optional field)
+    if (config.monthlyPercentages && typeof config.monthlyPercentages === 'object') {
+        for (const [month, percentages] of Object.entries(config.monthlyPercentages)) {
+            // Validate month format (YYYY-MM)
+            if (!/^\d{4}-\d{2}$/.test(month)) {
+                errors.push(`Formato de mes inválido: ${month}. Debe ser YYYY-MM`);
+                continue;
+            }
+
+            // Validate percentages for this month
+            if (typeof percentages !== 'object') {
+                errors.push(`Los porcentajes del mes ${month} deben ser un objeto`);
+                continue;
+            }
+
+            const monthTotal = Object.values(percentages).reduce((sum, val) => sum + val, 0);
+            if (Math.abs(monthTotal - 100) > 0.01) {
+                errors.push(`Los porcentajes del mes ${month} deben sumar 100% (actualmente: ${monthTotal}%)`);
+            }
+        }
+    }
+
     return {
         valid: errors.length === 0,
         errors

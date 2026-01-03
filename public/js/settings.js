@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         displayIncomeCategories();
         displayUserPins();
         displayClosedMonths();
+        displayMonthlyPercentages();
+        setupMonthSelector();
         setupEventHandlers();
     } catch (error) {
         console.error('Error initializing:', error);
@@ -225,21 +227,25 @@ async function changeUserPin(person) {
 function setupEventHandlers() {
     // Persons form
     document.getElementById('personsForm').addEventListener('submit', handlePersonsFormSubmit);
-    
+
     // Master PIN form
     document.getElementById('masterPinForm').addEventListener('submit', handleMasterPinSubmit);
-    
+
     // Month closure
     document.getElementById('btnCloseMonth').addEventListener('click', handleCloseMonth);
-    
+
     // Category forms
     document.getElementById('addCategoryFijo').addEventListener('submit', (e) => handleAddCategory(e, 'fijo'));
     document.getElementById('addCategoryVariable').addEventListener('submit', (e) => handleAddCategory(e, 'variable'));
     document.getElementById('addCategoryDiario').addEventListener('submit', (e) => handleAddCategory(e, 'diario'));
-    
+
     // Income category form
     document.getElementById('addIncomeCategory').addEventListener('submit', handleAddIncomeCategory);
-    
+
+    // Monthly percentages
+    document.getElementById('monthToEdit').addEventListener('change', handleMonthSelectChange);
+    document.getElementById('btnSaveMonthPercentages').addEventListener('click', handleSaveMonthPercentages);
+
     // Export buttons
     document.getElementById('btnExportAll').addEventListener('click', exportAllData);
     document.getElementById('btnExportCSV').addEventListener('click', exportCSVData);
@@ -688,26 +694,26 @@ async function handleImport() {
     const fileInput = document.getElementById('fileImport');
     const type = document.getElementById('importType').value;
     const resultsDiv = document.getElementById('importResults');
-    
+
     if (!fileInput.files || fileInput.files.length === 0) {
         showAlert('Por favor selecciona un archivo', 'error');
         return;
     }
-    
+
     const file = fileInput.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = async (e) => {
         try {
             let data;
-            
+
             // Check if it's CSV or Excel
             if (file.name.endsWith('.csv')) {
                 // Parse CSV
                 const text = e.target.result;
                 const lines = text.split('\n').filter(line => line.trim());
                 const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-                
+
                 data = lines.slice(1).map(line => {
                     const values = line.split(',');
                     const obj = {};
@@ -722,7 +728,7 @@ async function handleImport() {
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
                 data = XLSX.utils.sheet_to_json(worksheet, { raw: false });
-                
+
                 // Normalize headers to lowercase
                 data = data.map(row => {
                     const normalized = {};
@@ -732,15 +738,15 @@ async function handleImport() {
                     return normalized;
                 });
             }
-            
+
             // Process data
             let successCount = 0;
             let errorCount = 0;
             const errors = [];
-            
+
             for (let i = 0; i < data.length; i++) {
                 const row = data[i];
-                
+
                 try {
                     if (type === 'expenses') {
                         const expense = {
@@ -749,17 +755,17 @@ async function handleImport() {
                             amount: parseFloat(row.monto || row.amount),
                             date: row.fecha || row.date,
                             paidBy: row.pagado_por || row.paid_by || row.paidby,
-                            isShared: (row.es_comun || row.is_shared || row.isshared || '').toLowerCase() === 'si' || 
+                            isShared: (row.es_comun || row.is_shared || row.isshared || '').toLowerCase() === 'si' ||
                                      (row.es_comun || row.is_shared || row.isshared || '').toLowerCase() === 'yes' ||
                                      (row.es_comun || row.is_shared || row.isshared || '').toLowerCase() === 'true',
                             description: row.descripcion || row.description || ''
                         };
-                        
+
                         // Validate
                         if (!expense.type || !expense.category || !expense.amount || !expense.date || !expense.paidBy) {
                             throw new Error('Faltan campos requeridos');
                         }
-                        
+
                         await api.post('/expenses', expense);
                         successCount++;
                     } else {
@@ -770,12 +776,12 @@ async function handleImport() {
                             receivedBy: row.recibido_por || row.received_by || row.receivedby,
                             description: row.descripcion || row.description || ''
                         };
-                        
+
                         // Validate
                         if (!income.category || !income.amount || !income.date || !income.receivedBy) {
                             throw new Error('Faltan campos requeridos');
                         }
-                        
+
                         await api.post('/incomes', income);
                         successCount++;
                     }
@@ -784,7 +790,7 @@ async function handleImport() {
                     errors.push(`Fila ${i + 2}: ${error.message}`);
                 }
             }
-            
+
             // Show results
             resultsDiv.style.display = 'block';
             resultsDiv.innerHTML = `
@@ -795,26 +801,164 @@ async function handleImport() {
                     ${errors.length > 0 ? `<br><br><strong>Errores:</strong><br>${errors.slice(0, 5).join('<br>')}${errors.length > 5 ? '<br>...' : ''}` : ''}
                 </div>
             `;
-            
+
             showAlert(`Importación completada: ${successCount} registros importados`, successCount > 0 ? 'success' : 'error');
-            
+
             // Reload data
             await loadExpenses();
             await loadIncomes();
-            
+
             // Clear file input
             fileInput.value = '';
-            
+
         } catch (error) {
             console.error('Error importing file:', error);
             showAlert(`Error al importar archivo: ${error.message}`, 'error');
         }
     };
-    
+
     // Read file
     if (file.name.endsWith('.csv')) {
         reader.readAsText(file);
     } else {
         reader.readAsBinaryString(file);
+    }
+}
+
+// Monthly Percentages Management
+function displayMonthlyPercentages() {
+    const container = document.getElementById('monthlyPercentagesContainer');
+    const monthlyPercentages = config.monthlyPercentages || {};
+
+    if (Object.keys(monthlyPercentages).length === 0) {
+        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay porcentajes mensuales configurados</p>';
+        return;
+    }
+
+    // Sort months in reverse chronological order
+    const sortedMonths = Object.keys(monthlyPercentages).sort().reverse();
+
+    const html = sortedMonths.map(month => {
+        const percentages = monthlyPercentages[month];
+        const monthName = getMonthName(month);
+
+        const percentageDisplay = Object.entries(percentages)
+            .map(([person, pct]) => `${person}: ${pct}%`)
+            .join(' / ');
+
+        return `
+            <div class="flex justify-between items-center" style="padding: 0.75rem; background: #f0f9ff; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                <div>
+                    <strong>${monthName}</strong>
+                    <span style="color: #6b7280; font-size: 0.875rem; margin-left: 0.5rem;">
+                        ${percentageDisplay}
+                    </span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+function setupMonthSelector() {
+    const select = document.getElementById('monthToEdit');
+    const monthlyPercentages = config.monthlyPercentages || {};
+
+    // Get all months
+    const allMonths = Object.keys(monthlyPercentages).sort().reverse();
+
+    select.innerHTML = '<option value="">Selecciona un mes...</option>';
+
+    allMonths.forEach(month => {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = getMonthName(month);
+        select.appendChild(option);
+    });
+}
+
+function handleMonthSelectChange(e) {
+    const selectedMonth = e.target.value;
+    const formDiv = document.getElementById('monthPercentagesForm');
+    const inputsDiv = document.getElementById('monthPercentagesInputs');
+
+    if (!selectedMonth) {
+        formDiv.style.display = 'none';
+        return;
+    }
+
+    // Get percentages for this month
+    const monthlyPercentages = config.monthlyPercentages || {};
+    const percentages = monthlyPercentages[selectedMonth] || config.splitPercentages;
+
+    // Generate form inputs
+    let html = '<div class="form-grid" style="margin-bottom: 1rem;">';
+
+    config.persons.forEach(person => {
+        html += `
+            <div class="form-group">
+                <label>${person} (%)</label>
+                <input type="number"
+                       class="month-percentage-input"
+                       data-person="${person}"
+                       value="${percentages[person] || 50}"
+                       min="0"
+                       max="100"
+                       required>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    html += `<p style="color: #6b7280; font-size: 0.875rem;">La suma debe ser 100%</p>`;
+
+    inputsDiv.innerHTML = html;
+    formDiv.style.display = 'block';
+}
+
+async function handleSaveMonthPercentages() {
+    const selectedMonth = document.getElementById('monthToEdit').value;
+
+    if (!selectedMonth) {
+        showAlert('Selecciona un mes', 'error');
+        return;
+    }
+
+    // Get percentages from inputs
+    const inputs = document.querySelectorAll('.month-percentage-input');
+    const newPercentages = {};
+    let total = 0;
+
+    inputs.forEach(input => {
+        const person = input.dataset.person;
+        const value = parseInt(input.value);
+        newPercentages[person] = value;
+        total += value;
+    });
+
+    // Validate total is 100
+    if (Math.abs(total - 100) > 0.01) {
+        showAlert(`Los porcentajes deben sumar 100% (actualmente: ${total}%)`, 'error');
+        return;
+    }
+
+    // Update config
+    if (!config.monthlyPercentages) {
+        config.monthlyPercentages = {};
+    }
+
+    config.monthlyPercentages[selectedMonth] = newPercentages;
+
+    try {
+        await api.put('/config', config);
+        showAlert(`Porcentajes del mes ${getMonthName(selectedMonth)} actualizados exitosamente`, 'success');
+        displayMonthlyPercentages();
+
+        // Reload config to get updated data
+        await loadConfig();
+    } catch (error) {
+        console.error('Error updating monthly percentages:', error);
+        showAlert(`Error al actualizar porcentajes: ${error.message}`, 'error');
     }
 }
