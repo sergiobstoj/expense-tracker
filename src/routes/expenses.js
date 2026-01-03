@@ -1,5 +1,4 @@
 const express = require('express');
-const crypto = require('crypto');
 const { validateExpense } = require('../utils/validators');
 
 function createExpensesRouter(fileService) {
@@ -29,7 +28,7 @@ function createExpensesRouter(fileService) {
             }
 
             const newExpense = {
-                id: crypto.randomUUID(),
+                id: Date.now(),
                 ...req.body,
                 createdAt: new Date().toISOString()
             };
