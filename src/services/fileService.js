@@ -83,6 +83,12 @@ class FileService {
                 userPins: {},
                 masterPin: '0000',
                 closedMonths: []
+            },
+            'fixed-expenses-config.json': {},
+            'variable-expenses-config.json': {},
+            'daily-expenses-config.json': {
+                globalBudget: 0,
+                categories: {}
             }
         };
 
