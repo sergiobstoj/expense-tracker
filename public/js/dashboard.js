@@ -4,6 +4,7 @@ let expenses = [];
 let incomes = [];
 let settlements = [];
 let charts = {};
+let dailyExpensesConfig = {};
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -13,7 +14,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadConfig(),
             loadExpenses(),
             loadIncomes(),
-            loadSettlements()
+            loadSettlements(),
+            loadDailyExpensesConfig()
         ]);
 
         setupMonthSelector();
@@ -32,23 +34,57 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadCategories() {
-    categories = await api.get('/categories');
+    try {
+        categories = await api.get('/categories');
+    } catch (error) {
+        console.error('Error loading categories:', error);
+        categories = { fijo: [], variable: [], diario: [] };
+    }
 }
 
 async function loadConfig() {
-    config = await api.get('/config');
+    try {
+        config = await api.get('/config');
+    } catch (error) {
+        console.error('Error loading config:', error);
+        config = { persons: [], splitPercentages: {} };
+    }
 }
 
 async function loadExpenses() {
-    expenses = await api.get('/expenses');
+    try {
+        expenses = await api.get('/expenses');
+    } catch (error) {
+        console.error('Error loading expenses:', error);
+        expenses = [];
+    }
 }
 
 async function loadIncomes() {
-    incomes = await api.get('/incomes');
+    try {
+        incomes = await api.get('/incomes');
+    } catch (error) {
+        console.error('Error loading incomes:', error);
+        incomes = [];
+    }
 }
 
 async function loadSettlements() {
-    settlements = await api.get('/settlements');
+    try {
+        settlements = await api.get('/settlements');
+    } catch (error) {
+        console.error('Error loading settlements:', error);
+        settlements = [];
+    }
+}
+
+async function loadDailyExpensesConfig() {
+    try {
+        dailyExpensesConfig = await api.get('/expenses-config/daily');
+    } catch (error) {
+        console.error('Error loading daily expenses config:', error);
+        dailyExpensesConfig = { globalBudget: 0, categories: {} };
+    }
 }
 
 function setupMonthSelector() {
@@ -94,6 +130,7 @@ function updateDashboard() {
     updateBalance(monthExpenses, selectedMonth);
     updateCharts(monthExpenses, monthIncomes);
     displayRecentActivity(monthExpenses, monthIncomes);
+    updateDailyBudgetWidget(monthExpenses, selectedMonth);
 }
 
 function clearDashboard() {
@@ -110,6 +147,7 @@ function clearDashboard() {
     document.getElementById('dashTopCategory').textContent = '-';
     document.getElementById('dashTopCategoryAmount').textContent = '';
     document.getElementById('balanceContainer').innerHTML = '<p class="text-center">Selecciona un mes</p>';
+    document.getElementById('dailyBudgetWidget').innerHTML = '<p class="text-center" style="color: #6b7280; font-style: italic;">Selecciona un mes para ver el presupuesto</p>';
     document.getElementById('recentActivityBody').innerHTML = '<tr><td colspan="7" class="text-center">Selecciona un mes</td></tr>';
     document.getElementById('transactionCount').textContent = '';
 
@@ -215,7 +253,7 @@ function updateBalance(monthExpenses, selectedMonth) {
     const percentages = getMonthPercentages(config, selectedMonth);
 
     // Calculate settlements for this month
-    const monthSettlements = settlements.filter(s => s.month === selectedMonth);
+    const monthSettlements = (settlements || []).filter(s => s.month === selectedMonth);
     let adjustedBalance = { ...balance };
 
     // Adjust balance with settlements
@@ -679,4 +717,140 @@ function displayTrend(elementId, current, previous, inverted = false) {
     } else {
         element.textContent = `${arrow} ${absChange.toFixed(1)}% vs mes anterior`;
     }
+}
+
+// ============================================
+// DAILY BUDGET WIDGET
+// ============================================
+
+function updateDailyBudgetWidget(monthExpenses, selectedMonth) {
+    const container = document.getElementById('dailyBudgetWidget');
+    if (!container) return;
+
+    const dailyCategories = categories.diario || [];
+    const globalBudget = dailyExpensesConfig.globalBudget || 0;
+
+    // If no budget configured, show message
+    if (globalBudget === 0 && dailyCategories.length === 0) {
+        container.innerHTML = `
+            <p class="text-center" style="color: #6b7280;">
+                No hay presupuesto configurado.
+                <a href="/settings.html" style="color: #3b82f6; text-decoration: underline;">Configúralo aquí</a>
+            </p>
+        `;
+        return;
+    }
+
+    // Get daily expenses for selected month
+    const dailyExpenses = monthExpenses.filter(e => e.type === 'diario');
+
+    // Calculate total spent
+    let totalDailySpent = 0;
+    dailyExpenses.forEach(expense => {
+        totalDailySpent += parseFloat(expense.amount);
+    });
+
+    const globalRemaining = globalBudget - totalDailySpent;
+    const globalPercentUsed = globalBudget > 0 ? (totalDailySpent / globalBudget) * 100 : 0;
+
+    // Calculate days in month and days remaining
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const today = new Date();
+    const isCurrentMonth = year === today.getFullYear() && month === (today.getMonth() + 1);
+    const currentDayOfMonth = today.getDate();
+    const daysRemaining = isCurrentMonth ? daysInMonth - currentDayOfMonth : 0;
+    const dailyAllowance = daysRemaining > 0 ? globalRemaining / daysRemaining : 0;
+
+    // Determine status color
+    const budgetColor = globalPercentUsed > 100 ? '#ef4444' : globalPercentUsed > 90 ? '#f59e0b' : globalPercentUsed > 75 ? '#eab308' : '#10b981';
+    const statusText = globalPercentUsed > 100 ? '⚠️ PRESUPUESTO EXCEDIDO' : globalPercentUsed > 90 ? '⚠️ CASI AGOTADO' : globalPercentUsed > 75 ? '⚡ ATENCIÓN' : '✓ BAJO CONTROL';
+
+    let html = `
+        <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0;">Presupuesto Global</h3>
+                <span style="color: ${budgetColor}; font-weight: 600;">${statusText}</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">Gastado</div>
+                    <div style="font-weight: 600; font-size: 1.125rem;">${formatCurrency(totalDailySpent)}</div>
+                </div>
+                <div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">Presupuesto</div>
+                    <div style="font-weight: 600; font-size: 1.125rem;">${formatCurrency(globalBudget)}</div>
+                </div>
+                <div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">Restante</div>
+                    <div style="font-weight: 600; font-size: 1.125rem; color: ${budgetColor};">
+                        ${formatCurrency(globalRemaining)}
+                    </div>
+                </div>
+                <div>
+                    <div style="color: #6b7280; font-size: 0.875rem;">% Usado</div>
+                    <div style="font-weight: 600; font-size: 1.125rem; color: ${budgetColor};">
+                        ${globalPercentUsed.toFixed(1)}%
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #e5e7eb; border-radius: 0.5rem; height: 24px; overflow: hidden; position: relative;">
+                <div style="background: ${budgetColor}; height: 100%; width: ${Math.min(globalPercentUsed, 100)}%; transition: width 0.3s;"></div>
+                ${globalPercentUsed > 100 ? `<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 600;">EXCEDIDO</div>` : ''}
+            </div>
+
+            ${isCurrentMonth && daysRemaining > 0 ? `
+                <div style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; border-left: 4px solid ${budgetColor};">
+                    <div style="font-size: 0.875rem; color: #374151;">
+                        <strong>Quedan ${daysRemaining} días</strong> en el mes (día ${currentDayOfMonth}/${daysInMonth}).
+                        ${dailyAllowance > 0 ? `Puedes gastar <strong>${formatCurrency(dailyAllowance)}/día</strong> para mantenerte dentro del presupuesto.` : '<strong>Has agotado tu presupuesto.</strong>'}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    // Top 3 categories by spending
+    const categoryTotals = {};
+    dailyExpenses.forEach(expense => {
+        if (!categoryTotals[expense.category]) {
+            categoryTotals[expense.category] = 0;
+        }
+        categoryTotals[expense.category] += parseFloat(expense.amount);
+    });
+
+    const sortedCategories = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+    if (sortedCategories.length > 0) {
+        html += '<h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Top Categorías</h4>';
+        html += '<div style="display: grid; gap: 0.75rem;">';
+
+        sortedCategories.forEach(([categoryName, spent], index) => {
+            const configData = dailyExpensesConfig.categories?.[categoryName] || {};
+            const budget = configData.monthlyBudget || 0;
+            const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
+            const catColor = percentUsed > 100 ? '#ef4444' : percentUsed > 90 ? '#f59e0b' : '#10b981';
+
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f9fafb; border-radius: 0.375rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-weight: 600; color: #6b7280; font-size: 0.875rem;">${index + 1}.</span>
+                        <span style="font-weight: 600;">${categoryName}</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600;">${formatCurrency(spent)}</div>
+                        ${budget > 0 ? `<div style="font-size: 0.75rem; color: ${catColor};">${percentUsed.toFixed(0)}% de ${formatCurrency(budget)}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
 }

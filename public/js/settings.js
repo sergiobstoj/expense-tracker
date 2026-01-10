@@ -3,6 +3,9 @@ let incomeCategories = [];
 let config = {};
 let expenses = [];
 let incomes = [];
+let fixedExpensesConfig = {};
+let variableExpensesConfig = {};
+let dailyExpensesConfig = {};
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -12,16 +15,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadIncomeCategories(),
             loadConfig(),
             loadExpenses(),
-            loadIncomes()
+            loadIncomes(),
+            loadFixedExpensesConfig(),
+            loadVariableExpensesConfig(),
+            loadDailyExpensesConfig()
         ]);
 
         displayPersonsForm();
         displayCategories();
-        displayIncomeCategories();
         displayUserPins();
         displayClosedMonths();
         displayMonthlyPercentages();
         setupMonthSelector();
+        displayFixedExpensesConfig();
+        displayVariableExpensesConfig();
+        displayDailyExpensesConfig();
+        displayCategoryTypeChanger();
         setupEventHandlers();
     } catch (error) {
         console.error('Error initializing:', error);
@@ -129,44 +138,6 @@ function isIncomeCategoryInUse(categoryName) {
     return incomes.some(i => i.category === categoryName);
 }
 
-function displayIncomeCategories() {
-    const container = document.getElementById('incomeCategories');
-    
-    if (incomeCategories.length === 0) {
-        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay categorías de ingreso definidas</p>';
-        return;
-    }
-    
-    const html = incomeCategories.map((category, index) => {
-        // Handle both string and object format
-        const catName = typeof category === 'string' ? category : category.name;
-        const catEmoji = typeof category === 'object' && category.emoji ? category.emoji : '💰';
-        const isInUse = isIncomeCategoryInUse(catName);
-        
-        return `
-            <div class="flex justify-between items-center" style="padding: 0.75rem; background: #f0fdf4; border-radius: 0.375rem; margin-bottom: 0.5rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="font-size: 1.5rem;">${catEmoji}</span>
-                    <strong>${catName}</strong>
-                    ${isInUse ? '<span style="color: #10b981; font-size: 0.875rem; margin-left: 0.5rem;">✓ En uso</span>' : ''}
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-sm btn-success" onclick="editIncomeCategory(${index})">
-                        Editar
-                    </button>
-                    ${!isInUse ? `
-                        <button class="btn btn-sm btn-danger" onclick="deleteIncomeCategory('${catName}')">
-                            Eliminar
-                        </button>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    container.innerHTML = html;
-}
-
 function displayUserPins() {
     const container = document.getElementById('userPinsContainer');
     const userPins = config.userPins || {};
@@ -238,9 +209,6 @@ function setupEventHandlers() {
     document.getElementById('addCategoryFijo').addEventListener('submit', (e) => handleAddCategory(e, 'fijo'));
     document.getElementById('addCategoryVariable').addEventListener('submit', (e) => handleAddCategory(e, 'variable'));
     document.getElementById('addCategoryDiario').addEventListener('submit', (e) => handleAddCategory(e, 'diario'));
-
-    // Income category form
-    document.getElementById('addIncomeCategory').addEventListener('submit', handleAddIncomeCategory);
 
     // Monthly percentages
     document.getElementById('monthToEdit').addEventListener('change', handleMonthSelectChange);
@@ -525,116 +493,6 @@ async function deleteCategory(type, categoryName) {
         displayCategories();
     } catch (error) {
         console.error('Error deleting category:', error);
-        showAlert(`Error al eliminar la categoría: ${error.message}`, 'error');
-    }
-}
-
-async function handleAddIncomeCategory(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(e.target);
-    const newCategoryName = formData.get('newCategory').trim();
-    
-    if (!newCategoryName) {
-        showAlert('Ingresa un nombre para la categoría', 'error');
-        return;
-    }
-    
-    // Ask for emoji
-    const emoji = prompt('Ingresa un emoji para la categoría (opcional):', '💰');
-    
-    // Check if exists
-    const exists = incomeCategories.some(cat => {
-        const catName = typeof cat === 'string' ? cat : cat.name;
-        return catName === newCategoryName;
-    });
-    
-    if (exists) {
-        showAlert('Esta categoría ya existe', 'error');
-        return;
-    }
-    
-    const newCategory = {
-        name: newCategoryName,
-        emoji: emoji || '💰'
-    };
-    
-    incomeCategories.push(newCategory);
-    
-    try {
-        await api.put('/income-categories', incomeCategories);
-        showAlert('Categoría de ingreso agregada exitosamente', 'success');
-        e.target.reset();
-        displayIncomeCategories();
-    } catch (error) {
-        console.error('Error adding income category:', error);
-        showAlert(`Error al agregar la categoría: ${error.message}`, 'error');
-    }
-}
-
-async function editIncomeCategory(index) {
-    const category = incomeCategories[index];
-    const catName = typeof category === 'string' ? category : category.name;
-    const catEmoji = typeof category === 'object' && category.emoji ? category.emoji : '💰';
-    
-    const newName = prompt('Nombre de la categoría:', catName);
-    if (!newName || newName.trim() === '') {
-        return;
-    }
-    
-    const newEmoji = prompt('Emoji de la categoría:', catEmoji);
-    if (!newEmoji || newEmoji.trim() === '') {
-        return;
-    }
-    
-    // Check if name already exists (excluding current)
-    const exists = incomeCategories.some((cat, i) => {
-        if (i === index) return false;
-        const existingName = typeof cat === 'string' ? cat : cat.name;
-        return existingName === newName.trim();
-    });
-    
-    if (exists) {
-        showAlert('Ya existe una categoría con ese nombre', 'error');
-        return;
-    }
-    
-    incomeCategories[index] = {
-        name: newName.trim(),
-        emoji: newEmoji.trim()
-    };
-    
-    try {
-        await api.put('/income-categories', incomeCategories);
-        showAlert('Categoría de ingreso actualizada exitosamente', 'success');
-        displayIncomeCategories();
-    } catch (error) {
-        console.error('Error updating income category:', error);
-        showAlert(`Error al actualizar la categoría: ${error.message}`, 'error');
-    }
-}
-
-async function deleteIncomeCategory(categoryName) {
-    if (!confirm(`¿Estás seguro de que quieres eliminar la categoría de ingreso "${categoryName}"?`)) {
-        return;
-    }
-    
-    if (isIncomeCategoryInUse(categoryName)) {
-        showAlert('No se puede eliminar una categoría que está en uso', 'error');
-        return;
-    }
-    
-    incomeCategories = incomeCategories.filter(cat => {
-        const catName = typeof cat === 'string' ? cat : cat.name;
-        return catName !== categoryName;
-    });
-    
-    try {
-        await api.put('/income-categories', incomeCategories);
-        showAlert('Categoría de ingreso eliminada exitosamente', 'success');
-        displayIncomeCategories();
-    } catch (error) {
-        console.error('Error deleting income category:', error);
         showAlert(`Error al eliminar la categoría: ${error.message}`, 'error');
     }
 }
@@ -1032,5 +890,452 @@ async function handleSaveMonthPercentages() {
     } catch (error) {
         console.error('Error updating monthly percentages:', error);
         showAlert(`Error al actualizar porcentajes: ${error.message}`, 'error');
+    }
+}
+
+// ============================================
+// EXPENSES CONFIGURATION (FIXED, VARIABLE, DAILY)
+// ============================================
+
+async function loadFixedExpensesConfig() {
+    fixedExpensesConfig = await api.get('/expenses-config/fixed');
+}
+
+async function loadVariableExpensesConfig() {
+    variableExpensesConfig = await api.get('/expenses-config/variable');
+}
+
+async function loadDailyExpensesConfig() {
+    dailyExpensesConfig = await api.get('/expenses-config/daily');
+}
+
+function displayFixedExpensesConfig() {
+    const container = document.getElementById('fixedExpensesConfig');
+    if (!container) return;
+
+    const fixedCategories = categories.fijo || [];
+
+    if (fixedCategories.length === 0) {
+        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay categorías de gastos fijos configuradas</p>';
+        return;
+    }
+
+    let html = '<div style="display: grid; gap: 1.5rem;">';
+
+    fixedCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const configData = fixedExpensesConfig[categoryName] || {
+            defaultAmount: 0,
+            paymentDay: 1,
+            assignedTo: '',
+            description: ''
+        };
+
+        html += `
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem;">
+                <h4 style="font-weight: 600; margin-bottom: 0.75rem;">${categoryName}</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Monto Esperado</label>
+                        <input type="number" class="fixed-amount" data-category="${categoryName}"
+                               value="${configData.defaultAmount}" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Día de Pago (1-31)</label>
+                        <input type="number" class="fixed-day" data-category="${categoryName}"
+                               value="${configData.paymentDay}" min="1" max="31" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Responsable</label>
+                        <select class="fixed-assigned" data-category="${categoryName}">
+                            <option value="">No asignado</option>
+                            ${config.persons?.map(p => `<option value="${p}" ${configData.assignedTo === p ? 'selected' : ''}>${p}</option>`).join('') || ''}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group mt-2">
+                    <label>Descripción</label>
+                    <input type="text" class="fixed-desc" data-category="${categoryName}"
+                           value="${configData.description}" placeholder="Opcional">
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    html += '<button id="btnSaveFixedConfig" class="btn btn-primary mt-3">Guardar Configuración de Gastos Fijos</button>';
+
+    container.innerHTML = html;
+
+    document.getElementById('btnSaveFixedConfig')?.addEventListener('click', saveFixedExpensesConfig);
+}
+
+async function saveFixedExpensesConfig() {
+    const newConfig = {};
+
+    document.querySelectorAll('.fixed-amount').forEach(input => {
+        const category = input.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].defaultAmount = parseFloat(input.value) || 0;
+    });
+
+    document.querySelectorAll('.fixed-day').forEach(input => {
+        const category = input.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].paymentDay = parseInt(input.value) || 1;
+    });
+
+    document.querySelectorAll('.fixed-assigned').forEach(select => {
+        const category = select.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].assignedTo = select.value;
+    });
+
+    document.querySelectorAll('.fixed-desc').forEach(input => {
+        const category = input.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].description = input.value;
+    });
+
+    try {
+        await api.put('/expenses-config/fixed', newConfig);
+        fixedExpensesConfig = newConfig;
+        showAlert('Configuración de gastos fijos guardada exitosamente', 'success');
+    } catch (error) {
+        console.error('Error saving fixed expenses config:', error);
+        showAlert(`Error al guardar configuración: ${error.message}`, 'error');
+    }
+}
+
+function displayVariableExpensesConfig() {
+    const container = document.getElementById('variableExpensesConfig');
+    if (!container) return;
+
+    const variableCategories = categories.variable || [];
+
+    if (variableCategories.length === 0) {
+        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay categorías de gastos variables configuradas</p>';
+        return;
+    }
+
+    let html = '<div style="display: grid; gap: 1.5rem;">';
+
+    variableCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const configData = variableExpensesConfig[categoryName] || {
+            estimatedAmount: 0,
+            budgetAlert: 0,
+            assignedTo: '',
+            description: ''
+        };
+
+        html += `
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem;">
+                <h4 style="font-weight: 600; margin-bottom: 0.75rem;">${categoryName}</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Monto Estimado Mensual</label>
+                        <input type="number" class="variable-amount" data-category="${categoryName}"
+                               value="${configData.estimatedAmount}" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Alerta de Presupuesto</label>
+                        <input type="number" class="variable-alert" data-category="${categoryName}"
+                               value="${configData.budgetAlert}" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Responsable</label>
+                        <select class="variable-assigned" data-category="${categoryName}">
+                            <option value="">No asignado</option>
+                            <option value="Ambos" ${configData.assignedTo === 'Ambos' ? 'selected' : ''}>Ambos</option>
+                            ${config.persons?.map(p => `<option value="${p}" ${configData.assignedTo === p ? 'selected' : ''}>${p}</option>`).join('') || ''}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group mt-2">
+                    <label>Descripción</label>
+                    <input type="text" class="variable-desc" data-category="${categoryName}"
+                           value="${configData.description}" placeholder="Opcional">
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    html += '<button id="btnSaveVariableConfig" class="btn btn-primary mt-3">Guardar Configuración de Gastos Variables</button>';
+
+    container.innerHTML = html;
+
+    document.getElementById('btnSaveVariableConfig')?.addEventListener('click', saveVariableExpensesConfig);
+}
+
+async function saveVariableExpensesConfig() {
+    const newConfig = {};
+
+    document.querySelectorAll('.variable-amount').forEach(input => {
+        const category = input.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].estimatedAmount = parseFloat(input.value) || 0;
+    });
+
+    document.querySelectorAll('.variable-alert').forEach(input => {
+        const category = input.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].budgetAlert = parseFloat(input.value) || 0;
+    });
+
+    document.querySelectorAll('.variable-assigned').forEach(select => {
+        const category = select.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].assignedTo = select.value;
+    });
+
+    document.querySelectorAll('.variable-desc').forEach(input => {
+        const category = input.dataset.category;
+        if (!newConfig[category]) newConfig[category] = {};
+        newConfig[category].description = input.value;
+    });
+
+    try {
+        await api.put('/expenses-config/variable', newConfig);
+        variableExpensesConfig = newConfig;
+        showAlert('Configuración de gastos variables guardada exitosamente', 'success');
+    } catch (error) {
+        console.error('Error saving variable expenses config:', error);
+        showAlert(`Error al guardar configuración: ${error.message}`, 'error');
+    }
+}
+
+function displayDailyExpensesConfig() {
+    // Global budget
+    const globalInput = document.getElementById('globalDailyBudget');
+    if (globalInput) {
+        globalInput.value = dailyExpensesConfig.globalBudget || 0;
+    }
+
+    // Category budgets
+    const container = document.getElementById('dailyExpensesConfig');
+    if (!container) return;
+
+    const dailyCategories = categories.diario || [];
+
+    if (dailyCategories.length === 0) {
+        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay categorías de gastos diarios configuradas</p>';
+        return;
+    }
+
+    let html = '<div style="display: grid; gap: 1rem;">';
+
+    dailyCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const configData = dailyExpensesConfig.categories?.[categoryName] || {
+            monthlyBudget: 0,
+            trackingEnabled: true
+        };
+
+        html += `
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem;">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label style="font-weight: 600;">${categoryName}</label>
+                        <input type="number" class="daily-budget" data-category="${categoryName}"
+                               value="${configData.monthlyBudget}" min="0" step="0.01" placeholder="Presupuesto mensual">
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: center;">
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" class="daily-tracking" data-category="${categoryName}"
+                                   ${configData.trackingEnabled ? 'checked' : ''} style="margin-right: 0.5rem;">
+                            <span>Seguimiento activo</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    html += '<button id="btnSaveDailyConfig" class="btn btn-primary mt-3">Guardar Configuración de Gastos Diarios</button>';
+
+    container.innerHTML = html;
+
+    document.getElementById('btnSaveDailyConfig')?.addEventListener('click', saveDailyExpensesConfig);
+    document.getElementById('btnSaveGlobalBudget')?.addEventListener('click', saveGlobalBudget);
+}
+
+async function saveGlobalBudget() {
+    const globalInput = document.getElementById('globalDailyBudget');
+    if (!globalInput) return;
+
+    dailyExpensesConfig.globalBudget = parseFloat(globalInput.value) || 0;
+
+    try {
+        await api.put('/expenses-config/daily', dailyExpensesConfig);
+        showAlert('Presupuesto global guardado exitosamente', 'success');
+    } catch (error) {
+        console.error('Error saving global budget:', error);
+        showAlert(`Error al guardar presupuesto global: ${error.message}`, 'error');
+    }
+}
+
+async function saveDailyExpensesConfig() {
+    if (!dailyExpensesConfig.categories) {
+        dailyExpensesConfig.categories = {};
+    }
+
+    document.querySelectorAll('.daily-budget').forEach(input => {
+        const category = input.dataset.category;
+        if (!dailyExpensesConfig.categories[category]) {
+            dailyExpensesConfig.categories[category] = {};
+        }
+        dailyExpensesConfig.categories[category].monthlyBudget = parseFloat(input.value) || 0;
+    });
+
+    document.querySelectorAll('.daily-tracking').forEach(checkbox => {
+        const category = checkbox.dataset.category;
+        if (!dailyExpensesConfig.categories[category]) {
+            dailyExpensesConfig.categories[category] = {};
+        }
+        dailyExpensesConfig.categories[category].trackingEnabled = checkbox.checked;
+    });
+
+    try {
+        await api.put('/expenses-config/daily', dailyExpensesConfig);
+        showAlert('Configuración de gastos diarios guardada exitosamente', 'success');
+    } catch (error) {
+        console.error('Error saving daily expenses config:', error);
+        showAlert(`Error al guardar configuración: ${error.message}`, 'error');
+    }
+}
+
+// ============================================
+// CHANGE CATEGORY TYPE
+// ============================================
+
+function displayCategoryTypeChanger() {
+    const selectCategory = document.getElementById('categoryToChange');
+    const currentType = document.getElementById('currentType');
+    const newType = document.getElementById('newType');
+    const migrationOptions = document.getElementById('migrationOptions');
+    const btnChange = document.getElementById('btnChangeCategoryType');
+
+    if (!selectCategory) return;
+
+    // Populate category dropdown
+    let html = '<option value="">Selecciona una categoría...</option>';
+
+    ['fijo', 'variable', 'diario'].forEach(type => {
+        const cats = categories[type] || [];
+        cats.forEach(cat => {
+            const categoryName = typeof cat === 'string' ? cat : cat.name;
+            html += `<option value="${categoryName}" data-type="${type}">${categoryName} (${type})</option>`;
+        });
+    });
+
+    selectCategory.innerHTML = html;
+
+    // Event handlers
+    selectCategory.addEventListener('change', (e) => {
+        const selected = e.target.selectedOptions[0];
+        if (selected && selected.value) {
+            const type = selected.dataset.type;
+            currentType.value = type.charAt(0).toUpperCase() + type.slice(1);
+            newType.value = '';
+            migrationOptions.style.display = 'none';
+            btnChange.disabled = true;
+        } else {
+            currentType.value = '';
+            newType.value = '';
+            migrationOptions.style.display = 'none';
+            btnChange.disabled = true;
+        }
+    });
+
+    newType?.addEventListener('change', () => {
+        if (selectCategory.value && newType.value && currentType.value.toLowerCase() !== newType.value) {
+            migrationOptions.style.display = 'block';
+            btnChange.disabled = false;
+        } else {
+            migrationOptions.style.display = 'none';
+            btnChange.disabled = true;
+        }
+    });
+
+    btnChange?.addEventListener('click', changeCategoryType);
+}
+
+async function changeCategoryType() {
+    const selectCategory = document.getElementById('categoryToChange');
+    const currentTypeInput = document.getElementById('currentType');
+    const newTypeInput = document.getElementById('newType');
+    const migrateCheckbox = document.getElementById('migrateHistorical');
+
+    if (!selectCategory || !currentTypeInput || !newTypeInput) return;
+
+    const categoryName = selectCategory.value;
+    const currentType = currentTypeInput.value.toLowerCase();
+    const newType = newTypeInput.value;
+    const migrateHistorical = migrateCheckbox?.checked || false;
+
+    if (!categoryName || !newType || currentType === newType) {
+        showAlert('Por favor selecciona una categoría y un nuevo tipo válido', 'error');
+        return;
+    }
+
+    if (!confirm(`¿Estás seguro de cambiar "${categoryName}" de ${currentType} a ${newType}?${migrateHistorical ? '\n\nSe migrarán todos los gastos históricos.' : '\n\nSolo los gastos futuros usarán el nuevo tipo.'}`)) {
+        return;
+    }
+
+    try {
+        // Remove from current type
+        const currentCats = categories[currentType] || [];
+        const category = currentCats.find(c => (typeof c === 'string' ? c : c.name) === categoryName);
+        categories[currentType] = currentCats.filter(c => (typeof c === 'string' ? c : c.name) !== categoryName);
+
+        // Add to new type
+        if (!categories[newType]) categories[newType] = [];
+        categories[newType].push(category);
+
+        // Save categories
+        await api.put('/categories', categories);
+
+        // Migrate historical expenses if requested
+        if (migrateHistorical) {
+            const updatedExpenses = expenses.map(expense => {
+                if (expense.category === categoryName && expense.type === currentType) {
+                    return { ...expense, type: newType };
+                }
+                return expense;
+            });
+
+            // Update each expense
+            for (const expense of updatedExpenses) {
+                if (expense.category === categoryName && expense.type === newType) {
+                    await api.put(`/expenses/${expense.id}`, expense);
+                }
+            }
+
+            await loadExpenses();
+        }
+
+        // Reload and display
+        await loadCategories();
+        displayCategories();
+        displayCategoryTypeChanger();
+        displayFixedExpensesConfig();
+        displayVariableExpensesConfig();
+        displayDailyExpensesConfig();
+
+        showAlert(`Categoría "${categoryName}" movida de ${currentType} a ${newType} exitosamente${migrateHistorical ? ' (con migración de gastos históricos)' : ''}`, 'success');
+
+        // Reset form
+        selectCategory.value = '';
+        currentTypeInput.value = '';
+        newTypeInput.value = '';
+        document.getElementById('migrationOptions').style.display = 'none';
+        document.getElementById('btnChangeCategoryType').disabled = true;
+
+    } catch (error) {
+        console.error('Error changing category type:', error);
+        showAlert(`Error al cambiar tipo de categoría: ${error.message}`, 'error');
     }
 }

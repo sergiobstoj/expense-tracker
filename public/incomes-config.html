@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorías de Ingresos - Gestor de Gastos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="nav-brand">💰 Gestor de Gastos</a>
+            <ul class="nav-links">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/" id="navAddExpense">+ Gasto</a></li>
+                <li><a href="/incomes.html">+ Ingreso</a></li>
+                <li class="dropdown">
+                    <a href="#" class="active">Categorías ▾</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/fixed-expenses.html">Gastos Fijos</a></li>
+                        <li><a href="/variable-expenses.html">Gastos Variables</a></li>
+                        <li><a href="/daily-expenses.html">Gastos Diarios</a></li>
+                        <li><a href="/incomes-config.html" class="active">Ingresos</a></li>
+                    </ul>
+                </li>
+                <li><a href="/history.html">Historial</a></li>
+                <li><a href="/reports.html">Reportes</a></li>
+                <li><a href="/settings.html">Configuración</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Configuración de Categorías de Ingresos</h1>
+            <p>Define las categorías para tus ingresos mensuales</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Info Card -->
+        <div class="card" style="background: #f0fdf4; border: 1px solid #10b981;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: #065f46;">ℹ️ ¿Qué son las categorías de ingresos?</h3>
+            <p style="color: #065f46; margin: 0;">
+                Las categorías de ingresos te permiten clasificar tus entradas de dinero como salario, freelance, inversiones, etc.
+                Puedes agregar, editar o eliminar categorías según tus necesidades.
+            </p>
+        </div>
+
+        <!-- Category Management -->
+        <div class="card">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <span>Gestión de Categorías</span>
+                    <button id="btnAddCategory" class="btn btn-sm btn-success" style="white-space: nowrap;">➕ Agregar Categoría</button>
+                </div>
+            </div>
+            <div id="incomeCategoriesList">
+                <p class="text-center" style="color: #6b7280; font-style: italic;">Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/incomes-config.js"></script>
+</body>
+</html>

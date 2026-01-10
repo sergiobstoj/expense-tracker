@@ -3,6 +3,8 @@ let config = {};
 let expenses = [];
 let incomes = [];
 let charts = {};
+let variableExpensesConfig = {};
+let dailyExpensesConfig = {};
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -11,7 +13,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadCategories(),
             loadConfig(),
             loadExpenses(),
-            loadIncomes()
+            loadIncomes(),
+            loadVariableExpensesConfig(),
+            loadDailyExpensesConfig()
         ]);
 
         setupMonthSelector();
@@ -43,6 +47,24 @@ async function loadExpenses() {
 
 async function loadIncomes() {
     incomes = await api.get('/incomes');
+}
+
+async function loadVariableExpensesConfig() {
+    try {
+        variableExpensesConfig = await api.get('/expenses-config/variable');
+    } catch (error) {
+        console.error('Error loading variable expenses config:', error);
+        variableExpensesConfig = {};
+    }
+}
+
+async function loadDailyExpensesConfig() {
+    try {
+        dailyExpensesConfig = await api.get('/expenses-config/daily');
+    } catch (error) {
+        console.error('Error loading daily expenses config:', error);
+        dailyExpensesConfig = { globalBudget: 0, categories: {} };
+    }
 }
 
 function setupMonthSelector() {
@@ -83,6 +105,8 @@ function updateReport() {
     updateBalance(monthExpenses, selectedMonth);
     updateCharts(monthExpenses, monthIncomes);
     updateCategoriesTable(monthExpenses);
+    updateVariableComparison(selectedMonth);
+    updateDailyBudgetAnalysis(selectedMonth);
 }
 
 function clearReport() {
@@ -94,7 +118,9 @@ function clearReport() {
     document.getElementById('monthPersonal').textContent = '€0.00';
     document.getElementById('monthCount').textContent = '0';
     document.getElementById('categoriesTableBody').innerHTML = '<tr><td colspan="5" class="text-center">Selecciona un mes</td></tr>';
-    
+    document.getElementById('variableComparisonContainer').innerHTML = '<p class="text-center" style="color: #6b7280; font-style: italic;">Selecciona un mes para ver la comparación</p>';
+    document.getElementById('dailyBudgetContainer').innerHTML = '<p class="text-center" style="color: #6b7280; font-style: italic;">Selecciona un mes para ver el análisis</p>';
+
     // Destroy existing charts
     Object.values(charts).forEach(chart => chart.destroy());
     charts = {};
@@ -460,4 +486,243 @@ function updateCategoriesTable(monthExpenses) {
             <td>${formatCurrency(stat.total / stat.count)}</td>
         </tr>
     `).join('');
+}
+
+// ============================================
+// VARIABLE EXPENSES COMPARISON
+// ============================================
+
+function updateVariableComparison(selectedMonth) {
+    const container = document.getElementById('variableComparisonContainer');
+    if (!container) return;
+
+    // Get previous month
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const prevDate = new Date(year, month - 2, 1); // month-2 because month is 1-indexed
+    const previousMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+
+    // Get variable categories
+    const variableCategories = categories.variable || [];
+    if (variableCategories.length === 0) {
+        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay categorías de gastos variables configuradas</p>';
+        return;
+    }
+
+    // Calculate totals for current and previous month
+    const currentMonthExpenses = filterExpensesByMonth(expenses, selectedMonth);
+    const previousMonthExpenses = filterExpensesByMonth(expenses, previousMonth);
+
+    const comparison = {};
+
+    variableCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const configData = variableExpensesConfig[categoryName] || {};
+
+        const currentTotal = currentMonthExpenses
+            .filter(e => e.type === 'variable' && e.category === categoryName)
+            .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+        const previousTotal = previousMonthExpenses
+            .filter(e => e.type === 'variable' && e.category === categoryName)
+            .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+        const difference = currentTotal - previousTotal;
+        const percentChange = previousTotal > 0 ? ((difference / previousTotal) * 100) : 0;
+
+        comparison[categoryName] = {
+            current: currentTotal,
+            previous: previousTotal,
+            difference,
+            percentChange,
+            estimated: configData.estimatedAmount || 0,
+            budgetAlert: configData.budgetAlert || 0
+        };
+    });
+
+    // Render comparison
+    let html = '<div style="display: grid; gap: 1rem;">';
+
+    Object.entries(comparison).forEach(([categoryName, data]) => {
+        const isIncrease = data.difference > 0;
+        const isOverBudget = data.budgetAlert > 0 && data.current > data.budgetAlert;
+        const trendIcon = isIncrease ? '↑' : data.difference < 0 ? '↓' : '→';
+        const trendColor = isIncrease ? '#ef4444' : data.difference < 0 ? '#10b981' : '#6b7280';
+
+        html += `
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; ${isOverBudget ? 'background: #fef2f2;' : ''}">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4 style="font-weight: 600; margin: 0;">${categoryName}</h4>
+                    ${isOverBudget ? '<span style="color: #ef4444; font-weight: 600;">⚠️ SOBRE PRESUPUESTO</span>' : ''}
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                    <div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">Mes Actual</div>
+                        <div style="font-weight: 600; font-size: 1.125rem;">${formatCurrency(data.current)}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">Mes Anterior</div>
+                        <div style="font-weight: 600; font-size: 1.125rem;">${formatCurrency(data.previous)}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">Diferencia</div>
+                        <div style="font-weight: 600; font-size: 1.125rem; color: ${trendColor};">
+                            ${trendIcon} ${formatCurrency(Math.abs(data.difference))}
+                            ${Math.abs(data.percentChange) > 0 ? `(${data.percentChange.toFixed(1)}%)` : ''}
+                        </div>
+                    </div>
+                    ${data.estimated > 0 ? `
+                        <div>
+                            <div style="color: #6b7280; font-size: 0.875rem;">Estimado</div>
+                            <div style="font-weight: 600; font-size: 1.125rem;">${formatCurrency(data.estimated)}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ============================================
+// DAILY BUDGET ANALYSIS
+// ============================================
+
+function updateDailyBudgetAnalysis(selectedMonth) {
+    const container = document.getElementById('dailyBudgetContainer');
+    if (!container) return;
+
+    const dailyCategories = categories.diario || [];
+    if (dailyCategories.length === 0) {
+        container.innerHTML = '<p style="color: #6b7280; font-style: italic;">No hay categorías de gastos diarios configuradas</p>';
+        return;
+    }
+
+    // Get daily expenses for selected month
+    const monthExpenses = filterExpensesByMonth(expenses, selectedMonth);
+    const dailyExpenses = monthExpenses.filter(e => e.type === 'diario');
+
+    // Calculate totals by category
+    const categoryTotals = {};
+    let totalDailySpent = 0;
+
+    dailyCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const spent = dailyExpenses
+            .filter(e => e.category === categoryName)
+            .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+        categoryTotals[categoryName] = spent;
+        totalDailySpent += spent;
+    });
+
+    const globalBudget = dailyExpensesConfig.globalBudget || 0;
+    const globalRemaining = globalBudget - totalDailySpent;
+    const globalPercentUsed = globalBudget > 0 ? (totalDailySpent / globalBudget) * 100 : 0;
+
+    // Calculate days in month and days remaining
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const today = new Date();
+    const isCurrentMonth = year === today.getFullYear() && month === (today.getMonth() + 1);
+    const daysRemaining = isCurrentMonth ? daysInMonth - today.getDate() : 0;
+    const dailyAllowance = daysRemaining > 0 ? globalRemaining / daysRemaining : 0;
+
+    // Render analysis
+    let html = '';
+
+    // Global budget summary
+    if (globalBudget > 0) {
+        const budgetColor = globalPercentUsed > 100 ? '#ef4444' : globalPercentUsed > 90 ? '#f59e0b' : '#10b981';
+        html += `
+            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1.5rem; ${globalPercentUsed > 100 ? 'background: #fef2f2;' : ''}">
+                <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">
+                    Presupuesto Global
+                    ${globalPercentUsed > 100 ? ' ⚠️ EXCEDIDO' : ''}
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">Gastado</div>
+                        <div style="font-weight: 600; font-size: 1.25rem;">${formatCurrency(totalDailySpent)}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">Presupuesto</div>
+                        <div style="font-weight: 600; font-size: 1.25rem;">${formatCurrency(globalBudget)}</div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">Restante</div>
+                        <div style="font-weight: 600; font-size: 1.25rem; color: ${budgetColor};">
+                            ${formatCurrency(globalRemaining)}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">% Usado</div>
+                        <div style="font-weight: 600; font-size: 1.25rem; color: ${budgetColor};">
+                            ${globalPercentUsed.toFixed(1)}%
+                        </div>
+                    </div>
+                </div>
+                <div style="background: #e5e7eb; border-radius: 0.5rem; height: 20px; overflow: hidden;">
+                    <div style="background: ${budgetColor}; height: 100%; width: ${Math.min(globalPercentUsed, 100)}%; transition: width 0.3s;"></div>
+                </div>
+                ${isCurrentMonth && daysRemaining > 0 ? `
+                    <div style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem;">
+                        <div style="font-size: 0.875rem; color: #6b7280;">
+                            Quedan <strong>${daysRemaining} días</strong> en el mes.
+                            Puedes gastar <strong>${formatCurrency(dailyAllowance)}/día</strong> para mantenerte dentro del presupuesto.
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    // Per-category breakdown
+    html += '<h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Presupuesto por Categoría</h3>';
+    html += '<div style="display: grid; gap: 1rem;">';
+
+    dailyCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const configData = dailyExpensesConfig.categories?.[categoryName] || {};
+        const budget = configData.monthlyBudget || 0;
+        const spent = categoryTotals[categoryName] || 0;
+        const remaining = budget - spent;
+        const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
+        const budgetColor = percentUsed > 100 ? '#ef4444' : percentUsed > 90 ? '#f59e0b' : '#10b981';
+
+        if (budget > 0 || spent > 0) {
+            html += `
+                <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; ${percentUsed > 100 ? 'background: #fef2f2;' : ''}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="font-weight: 600; margin: 0;">${categoryName}</h4>
+                        ${percentUsed > 100 ? '<span style="color: #ef4444; font-size: 0.875rem; font-weight: 600;">EXCEDIDO +${formatCurrency(Math.abs(remaining))}</span>' : ''}
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <div>
+                            <div style="color: #6b7280; font-size: 0.875rem;">Gastado</div>
+                            <div style="font-weight: 600;">${formatCurrency(spent)}</div>
+                        </div>
+                        <div>
+                            <div style="color: #6b7280; font-size: 0.875rem;">Presupuesto</div>
+                            <div style="font-weight: 600;">${formatCurrency(budget)}</div>
+                        </div>
+                        <div>
+                            <div style="color: #6b7280; font-size: 0.875rem;">% Usado</div>
+                            <div style="font-weight: 600; color: ${budgetColor};">${percentUsed.toFixed(1)}%</div>
+                        </div>
+                    </div>
+                    ${budget > 0 ? `
+                        <div style="background: #e5e7eb; border-radius: 0.5rem; height: 12px; overflow: hidden;">
+                            <div style="background: ${budgetColor}; height: 100%; width: ${Math.min(percentUsed, 100)}%; transition: width 0.3s;"></div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+    });
+
+    html += '</div>';
+
+    container.innerHTML = html;
 }

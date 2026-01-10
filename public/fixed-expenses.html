@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gastos Fijos - Gestor de Gastos</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="/" class="nav-brand">💰 Gestor de Gastos</a>
+            <ul class="nav-links">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/" id="navAddExpense">+ Gasto</a></li>
+                <li><a href="/incomes.html">+ Ingreso</a></li>
+                <li class="dropdown">
+                    <a href="#" class="active">Categorías ▾</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/fixed-expenses.html" class="active">Gastos Fijos</a></li>
+                        <li><a href="/variable-expenses.html">Gastos Variables</a></li>
+                        <li><a href="/daily-expenses.html">Gastos Diarios</a></li>
+                        <li><a href="/incomes-config.html">Ingresos</a></li>
+                    </ul>
+                </li>
+                <li><a href="/history.html">Historial</a></li>
+                <li><a href="/reports.html">Reportes</a></li>
+                <li><a href="/settings.html">Configuración</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Configuración de Gastos Fijos</h1>
+            <p>Define el monto esperado, día de pago y responsable para cada gasto fijo</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Info Card -->
+        <div class="card" style="background: #eff6ff; border: 1px solid #3b82f6;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: #1e40af;">ℹ️ ¿Qué son los gastos fijos?</h3>
+            <p style="color: #1e40af; margin: 0;">
+                Los gastos fijos son aquellos que se repiten cada mes con un monto predecible, como arriendo, cuotas, gym, suscripciones, etc.
+                Configura el monto esperado y el día de pago para cada uno.
+            </p>
+        </div>
+
+        <!-- Category Management -->
+        <div class="card">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <span>Gestión de Categorías</span>
+                    <button id="btnAddCategory" class="btn btn-sm btn-success" style="white-space: nowrap;">➕ Agregar Categoría</button>
+                </div>
+            </div>
+            <div id="categoriesList">
+                <p class="text-center" style="color: #6b7280; font-style: italic;">Cargando...</p>
+            </div>
+        </div>
+
+        <!-- Fixed Expenses Configuration -->
+        <div class="card">
+            <div class="card-header">Configuración de Gastos Fijos</div>
+            <div id="fixedExpensesConfig">
+                <p class="text-center" style="color: #6b7280; font-style: italic;">Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/utils.js"></script>
+    <script src="/js/fixed-expenses.js"></script>
+</body>
+</html>

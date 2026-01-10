@@ -15,6 +15,15 @@
                 <li><a href="/">Dashboard</a></li>
                 <li><a href="/" id="navAddExpense">+ Gasto</a></li>
                 <li><a href="/incomes.html">+ Ingreso</a></li>
+                <li class="dropdown">
+                    <a href="#">Categorías ▾</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/fixed-expenses.html">Gastos Fijos</a></li>
+                        <li><a href="/variable-expenses.html">Gastos Variables</a></li>
+                        <li><a href="/daily-expenses.html">Gastos Diarios</a></li>
+                        <li><a href="/incomes-config.html">Ingresos</a></li>
+                    </ul>
+                </li>
                 <li><a href="/history.html">Historial</a></li>
                 <li><a href="/reports.html" class="active">Reportes</a></li>
                 <li><a href="/settings.html">Configuración</a></li>
@@ -135,6 +144,28 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Variable Expenses Comparison -->
+        <div class="card">
+            <div class="card-header">Comparación Mensual de Gastos Variables</div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">
+                Compara los gastos variables del mes seleccionado con el mes anterior.
+            </p>
+            <div id="variableComparisonContainer">
+                <p class="text-center" style="color: #6b7280; font-style: italic;">Selecciona un mes para ver la comparación</p>
+            </div>
+        </div>
+
+        <!-- Daily Budget Analysis -->
+        <div class="card">
+            <div class="card-header">Análisis de Presupuesto Diario</div>
+            <p style="color: #6b7280; margin-bottom: 1rem;">
+                Seguimiento del presupuesto configurado vs gastos reales del mes.
+            </p>
+            <div id="dailyBudgetContainer">
+                <p class="text-center" style="color: #6b7280; font-style: italic;">Selecciona un mes para ver el análisis</p>
             </div>
         </div>
     </div>
