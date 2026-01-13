@@ -539,6 +539,9 @@ tr:hover {
 .mb-3 { margin-bottom: 1.5rem; }
 .mb-4 { margin-bottom: 2rem; }
 
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+
 .flex {
     display: flex;
 }
@@ -609,6 +612,557 @@ tr:hover {
 
 .theme-switch input:checked + .theme-slider:before {
     transform: translateX(26px);
+}
+
+/* ============================================
+   UTILITY CLASSES FOR DARK MODE SUPPORT
+   ============================================ */
+
+.text-muted {
+    color: var(--text-secondary);
+}
+
+.text-dark {
+    color: var(--text-primary);
+}
+
+.text-primary {
+    color: var(--primary);
+}
+
+.text-success {
+    color: var(--success);
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-warning {
+    color: var(--warning);
+}
+
+.bg-light {
+    background-color: var(--bg-secondary);
+}
+
+.bg-card {
+    background-color: var(--bg-primary);
+}
+
+.border-light {
+    border: 1px solid var(--border);
+}
+
+/* ============================================
+   FIXED EXPENSES SECTION STYLES
+   ============================================ */
+
+.fixed-expenses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.fixed-expense-card {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: var(--bg-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.fixed-expense-card:hover {
+    box-shadow: var(--shadow);
+}
+
+.fixed-expense-card.paid {
+    border-left: 4px solid var(--success);
+}
+
+.fixed-expense-card.pending {
+    border-left: 4px solid var(--danger);
+}
+
+.fixed-expense-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.fixed-expense-title {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.fixed-expense-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.fixed-expense-status.status-paid {
+    background-color: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.fixed-expense-status.status-pending {
+    background-color: rgba(239, 68, 68, 0.15);
+    color: var(--danger);
+}
+
+.fixed-expense-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fixed-expense-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.fixed-expenses-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* ============================================
+   VARIABLE EXPENSES SECTION STYLES
+   ============================================ */
+
+.variable-expenses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.variable-expense-card {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: var(--bg-primary);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.variable-expense-card:hover {
+    box-shadow: var(--shadow);
+}
+
+.variable-expense-header {
+    margin-bottom: 0.75rem;
+}
+
+.variable-expense-title {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.variable-expense-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.variable-expense-amount {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.amount-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.amount-value {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.variable-expense-budget {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.variable-expense-comparison {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+}
+
+.comparison-month {
+    font-weight: 400;
+    opacity: 0.8;
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+.variable-expenses-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* ============================================
+   BALANCE SECTION STYLES
+   ============================================ */
+
+.balance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.balance-person-card {
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+.balance-person-card.positive {
+    background-color: rgba(16, 185, 129, 0.15);
+    border: 1px solid var(--success);
+}
+
+.balance-person-card.negative {
+    background-color: rgba(239, 68, 68, 0.15);
+    border: 1px solid var(--danger);
+}
+
+.balance-person-name {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.balance-row {
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.balance-total {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid rgba(128, 128, 128, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.balance-amount {
+    font-size: 1.5rem;
+}
+
+/* Settlements History */
+.settlements-history {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border-left: 4px solid var(--success);
+}
+
+.settlements-title {
+    font-size: 1.125rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.settlement-item {
+    padding: 0.75rem;
+    background-color: var(--bg-primary);
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+.settlement-detail {
+    font-size: 0.875rem;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.settlement-info-box {
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 0.375rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid var(--primary);
+}
+
+/* Balance Action Box */
+.balance-action-box {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.balance-action-box.needs-payment {
+    background-color: var(--bg-secondary);
+    border-left: 4px solid var(--primary);
+}
+
+.balance-action-box.balanced {
+    background-color: rgba(16, 185, 129, 0.15);
+    border: 1px solid var(--success);
+}
+
+.balance-action-title {
+    font-size: 1.25rem;
+}
+
+.balance-action-text {
+    margin-top: 0.5rem;
+    font-size: 1.125rem;
+}
+
+/* ============================================
+   DAILY BUDGET WIDGET STYLES
+   ============================================ */
+
+.budget-widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.budget-widget-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.budget-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.budget-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.budget-stat-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.budget-stat-value {
+    font-weight: 600;
+    font-size: 1.125rem;
+}
+
+.budget-progress-bar {
+    background-color: var(--border);
+    border-radius: 0.5rem;
+    height: 24px;
+    overflow: hidden;
+    position: relative;
+}
+
+.budget-progress-fill {
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.budget-progress-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.budget-info-box {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.budget-top-categories {
+    margin-top: 1.5rem;
+}
+
+.budget-top-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.budget-category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background-color: var(--bg-secondary);
+    border-radius: 0.375rem;
+    margin-bottom: 0.5rem;
+}
+
+.budget-category-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.budget-category-rank {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.budget-category-name {
+    font-weight: 600;
+}
+
+.budget-category-right {
+    text-align: right;
+}
+
+.budget-category-amount {
+    font-weight: 600;
+}
+
+.budget-category-percent {
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   CATEGORY CARD STYLES (Used in config pages)
+   ============================================ */
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.category-card {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    background-color: var(--bg-primary);
+    transition: box-shadow 0.2s;
+}
+
+.category-card:hover {
+    box-shadow: var(--shadow);
+}
+
+.category-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.category-emoji {
+    font-size: 1.5rem;
+}
+
+.category-name {
+    font-weight: 600;
+    margin: 0;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.category-badge {
+    background-color: var(--success);
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.category-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.in-use-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Config Card Styles */
+.config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1rem;
+}
+
+.config-card {
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    background-color: var(--bg-primary);
+}
+
+.config-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.75rem;
+}
+
+.config-form-group {
+    margin-bottom: 0.75rem;
+}
+
+.config-form-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+/* ============================================
+   DARK MODE SPECIFIC - INLINE STYLE OVERRIDES
+   ============================================ */
+
+/* Ensure proper contrast for text in various contexts */
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal-content {
+    color: var(--text-primary);
 }
 
 /* Responsive */

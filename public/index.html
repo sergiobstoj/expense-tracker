@@ -108,11 +108,31 @@
             </div>
         </div>
 
+        <!-- Fixed Expenses Section -->
+        <div class="card">
+            <div class="card-header">
+                <span>💰 Gastos Fijos del Mes</span>
+            </div>
+            <div id="fixedExpensesSection">
+                <p class="text-center text-muted" style="font-style: italic;">Selecciona un mes para ver los gastos fijos</p>
+            </div>
+        </div>
+
+        <!-- Variable Expenses Section -->
+        <div class="card">
+            <div class="card-header">
+                <span>📊 Gastos Variables del Mes</span>
+            </div>
+            <div id="variableExpensesSection">
+                <p class="text-center text-muted" style="font-style: italic;">Selecciona un mes para ver los gastos variables</p>
+            </div>
+        </div>
+
         <!-- Daily Budget Widget -->
         <div class="card">
             <div class="card-header">Presupuesto Diario</div>
             <div id="dailyBudgetWidget">
-                <p class="text-center" style="color: #6b7280; font-style: italic;">Selecciona un mes para ver el presupuesto</p>
+                <p class="text-center text-muted" style="font-style: italic;">Selecciona un mes para ver el presupuesto</p>
             </div>
         </div>
 
@@ -253,7 +273,7 @@
                 <input type="hidden" id="settlementFrom" name="from">
                 <input type="hidden" id="settlementTo" name="to">
 
-                <div style="padding: 1rem; background: #dbeafe; border-radius: 0.375rem; margin-bottom: 1.5rem;">
+                <div class="settlement-info-box">
                     <p id="settlementInfo" style="font-size: 1.125rem; text-align: center; margin: 0;"></p>
                 </div>
 
@@ -285,22 +305,23 @@
     <style>
         .quick-category-btn {
             padding: 0.75rem 1rem;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--border);
             border-radius: 0.5rem;
-            background: white;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             cursor: pointer;
             font-size: 0.95rem;
             transition: all 0.2s;
         }
-        
+
         .quick-category-btn:hover {
-            border-color: #3b82f6;
-            background: #eff6ff;
+            border-color: var(--primary);
+            background: var(--bg-secondary);
         }
-        
+
         .quick-category-btn.active {
-            border-color: #3b82f6;
-            background: #3b82f6;
+            border-color: var(--primary);
+            background: var(--primary);
             color: white;
         }
     </style>

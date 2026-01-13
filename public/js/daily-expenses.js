@@ -48,11 +48,11 @@ function displayCategories() {
     const dailyCategories = categories.diario || [];
 
     if (dailyCategories.length === 0) {
-        container.innerHTML = '<p style="color: #6b7280; font-style: italic; padding: 1rem; text-align: center;">No hay categorías de gastos diarios definidas. Haz clic en "Agregar Categoría" para crear una.</p>';
+        container.innerHTML = '<p class="text-muted" style="font-style: italic; padding: 1rem; text-align: center;">No hay categorías de gastos diarios definidas. Haz clic en "Agregar Categoría" para crear una.</p>';
         return;
     }
 
-    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">';
+    let html = '<div class="category-grid">';
 
     dailyCategories.forEach((cat, index) => {
         const categoryName = typeof cat === 'string' ? cat : cat.name;
@@ -60,13 +60,13 @@ function displayCategories() {
         const isInUse = isCategoryInUse(categoryName);
 
         html += `
-            <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.875rem; background: white; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <span style="font-size: 1.5rem;">${emoji}</span>
-                    <h4 style="font-weight: 600; margin: 0; font-size: 1rem; flex: 1;">${categoryName}</h4>
-                    ${isInUse ? '<span style="background: #10b981; color: white; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;">✓</span>' : ''}
+            <div class="category-card">
+                <div class="category-card-header">
+                    <span class="category-emoji">${emoji}</span>
+                    <h4 class="category-name">${categoryName}</h4>
+                    ${isInUse ? '<span class="category-badge">✓</span>' : ''}
                 </div>
-                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <div class="category-card-actions">
                     <button class="btn btn-sm btn-primary" onclick="editCategory(${index})">
                         Editar
                     </button>
@@ -74,7 +74,7 @@ function displayCategories() {
                         <button class="btn btn-sm btn-danger" onclick="deleteCategory('${categoryName}')">
                             Eliminar
                         </button>
-                    ` : '<span style="font-size: 0.75rem; color: #6b7280;">En uso</span>'}
+                    ` : '<span class="in-use-text">En uso</span>'}
                 </div>
             </div>
         `;
