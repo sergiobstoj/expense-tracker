@@ -5,6 +5,8 @@ let incomes = [];
 let settlements = [];
 let charts = {};
 let dailyExpensesConfig = {};
+let fixedExpensesConfig = {};
+let variableExpensesConfig = {};
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
@@ -15,7 +17,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadExpenses(),
             loadIncomes(),
             loadSettlements(),
-            loadDailyExpensesConfig()
+            loadDailyExpensesConfig(),
+            loadFixedExpensesConfig(),
+            loadVariableExpensesConfig()
         ]);
 
         setupMonthSelector();
@@ -87,6 +91,24 @@ async function loadDailyExpensesConfig() {
     }
 }
 
+async function loadFixedExpensesConfig() {
+    try {
+        fixedExpensesConfig = await api.get('/expenses-config/fixed');
+    } catch (error) {
+        console.error('Error loading fixed expenses config:', error);
+        fixedExpensesConfig = {};
+    }
+}
+
+async function loadVariableExpensesConfig() {
+    try {
+        variableExpensesConfig = await api.get('/expenses-config/variable');
+    } catch (error) {
+        console.error('Error loading variable expenses config:', error);
+        variableExpensesConfig = {};
+    }
+}
+
 function setupMonthSelector() {
     const expenseMonths = getUniqueMonths(expenses);
     const incomeMonths = getUniqueMonths(incomes);
@@ -128,6 +150,8 @@ function updateDashboard() {
 
     updateStats(monthExpenses, monthIncomes);
     updateBalance(monthExpenses, selectedMonth);
+    updateFixedExpensesSection(monthExpenses, selectedMonth);
+    updateVariableExpensesSection(monthExpenses, selectedMonth);
     updateCharts(monthExpenses, monthIncomes);
     displayRecentActivity(monthExpenses, monthIncomes);
     updateDailyBudgetWidget(monthExpenses, selectedMonth);
@@ -147,7 +171,9 @@ function clearDashboard() {
     document.getElementById('dashTopCategory').textContent = '-';
     document.getElementById('dashTopCategoryAmount').textContent = '';
     document.getElementById('balanceContainer').innerHTML = '<p class="text-center">Selecciona un mes</p>';
-    document.getElementById('dailyBudgetWidget').innerHTML = '<p class="text-center" style="color: #6b7280; font-style: italic;">Selecciona un mes para ver el presupuesto</p>';
+    document.getElementById('fixedExpensesSection').innerHTML = '<p class="text-center text-muted" style="font-style: italic;">Selecciona un mes para ver los gastos fijos</p>';
+    document.getElementById('variableExpensesSection').innerHTML = '<p class="text-center text-muted" style="font-style: italic;">Selecciona un mes para ver los gastos variables</p>';
+    document.getElementById('dailyBudgetWidget').innerHTML = '<p class="text-center text-muted" style="font-style: italic;">Selecciona un mes para ver el presupuesto</p>';
     document.getElementById('recentActivityBody').innerHTML = '<tr><td colspan="7" class="text-center">Selecciona un mes</td></tr>';
     document.getElementById('transactionCount').textContent = '';
 
@@ -266,30 +292,30 @@ function updateBalance(monthExpenses, selectedMonth) {
         }
     });
 
-    let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">';
+    let html = '<div class="balance-grid">';
 
     persons.forEach(person => {
         const personBalance = adjustedBalance[person];
         const isPositive = personBalance.balance >= 0;
 
         html += `
-            <div style="padding: 1.5rem; background: ${isPositive ? '#d1fae5' : '#fee2e2'}; border-radius: 0.5rem; color: #1f2937;">
-                <h3 style="margin-bottom: 1rem; font-size: 1.25rem; color: #1f2937;">${person}</h3>
-                <div style="margin-bottom: 0.5rem;">
-                    <span style="color: #6b7280;">Porcentaje:</span>
-                    <strong style="color: #1f2937;">${percentages[person]}%</strong>
+            <div class="balance-person-card ${isPositive ? 'positive' : 'negative'}">
+                <h3 class="balance-person-name">${person}</h3>
+                <div class="balance-row">
+                    <span class="text-muted">Porcentaje:</span>
+                    <strong>${percentages[person]}%</strong>
                 </div>
-                <div style="margin-bottom: 0.5rem;">
-                    <span style="color: #6b7280;">Pagó en común:</span>
-                    <strong style="color: #1f2937;">${formatCurrency(personBalance.paid)}</strong>
+                <div class="balance-row">
+                    <span class="text-muted">Pagó en común:</span>
+                    <strong>${formatCurrency(personBalance.paid)}</strong>
                 </div>
-                <div style="margin-bottom: 0.5rem;">
-                    <span style="color: #6b7280;">Debería pagar:</span>
-                    <strong style="color: #1f2937;">${formatCurrency(personBalance.shouldPay)}</strong>
+                <div class="balance-row">
+                    <span class="text-muted">Debería pagar:</span>
+                    <strong>${formatCurrency(personBalance.shouldPay)}</strong>
                 </div>
-                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid rgba(0,0,0,0.1);">
-                    <span style="color: #6b7280;">Balance:</span>
-                    <strong style="font-size: 1.5rem; color: ${isPositive ? '#059669' : '#dc2626'};">
+                <div class="balance-total">
+                    <span class="text-muted">Balance:</span>
+                    <strong class="balance-amount ${isPositive ? 'text-success' : 'text-danger'}">
                         ${isPositive ? '+' : ''}${formatCurrency(personBalance.balance)}
                     </strong>
                 </div>
@@ -302,12 +328,12 @@ function updateBalance(monthExpenses, selectedMonth) {
     // Show settlements history if any
     if (monthSettlements.length > 0) {
         html += `
-            <div style="margin-top: 2rem; padding: 1.5rem; background: #f0fdf4; border-radius: 0.5rem; border: 2px solid #10b981; color: #1f2937;">
-                <strong style="font-size: 1.125rem; display: block; margin-bottom: 1rem; color: #1f2937;">💸 Pagos Registrados:</strong>
+            <div class="settlements-history">
+                <strong class="settlements-title">💸 Pagos Registrados:</strong>
                 ${monthSettlements.map(s => `
-                    <div style="padding: 0.75rem; background: white; border-radius: 0.375rem; margin-bottom: 0.5rem; color: #1f2937;">
-                        <strong style="color: #1f2937;">${s.from}</strong> pagó <strong style="color: #1f2937;">${formatCurrency(s.amount)}</strong> a <strong style="color: #1f2937;">${s.to}</strong>
-                        <span style="color: #6b7280; font-size: 0.875rem; display: block; margin-top: 0.25rem;">
+                    <div class="settlement-item">
+                        <strong>${s.from}</strong> pagó <strong class="text-success">${formatCurrency(s.amount)}</strong> a <strong>${s.to}</strong>
+                        <span class="settlement-detail text-muted">
                             ${formatDate(s.date)}${s.description ? ' - ' + s.description : ''}
                         </span>
                     </div>
@@ -324,16 +350,16 @@ function updateBalance(monthExpenses, selectedMonth) {
         const debtor = balance1 < 0 ? person1 : person2;
         const creditor = balance1 < 0 ? person2 : person1;
         html += `
-            <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-radius: 0.5rem; color: #1f2937;">
-                <div style="text-align: center; margin-bottom: 1rem;">
-                    <strong style="font-size: 1.25rem; color: #1f2937;">💰 Para equilibrar:</strong>
-                    <p style="margin-top: 0.5rem; font-size: 1.125rem; color: #1f2937;">
+            <div class="balance-action-box needs-payment">
+                <div class="text-center mb-2">
+                    <strong class="balance-action-title">💰 Para equilibrar:</strong>
+                    <p class="balance-action-text">
                         ${debtor} debe pagar
-                        <strong style="color: #1f2937;">${formatCurrency(Math.abs(balance1))}</strong>
+                        <strong>${formatCurrency(Math.abs(balance1))}</strong>
                         a ${creditor}
                     </p>
                 </div>
-                <div style="text-align: center;">
+                <div class="text-center">
                     <button class="btn btn-success" onclick="openSettlementModal('${selectedMonth}', '${debtor}', '${creditor}', ${balance1})">
                         Registrar Pago
                     </button>
@@ -342,8 +368,8 @@ function updateBalance(monthExpenses, selectedMonth) {
         `;
     } else {
         html += `
-            <div style="margin-top: 2rem; padding: 1.5rem; background: #d1fae5; border-radius: 0.5rem; text-align: center; color: #1f2937;">
-                <strong style="font-size: 1.25rem; color: #1f2937;">✅ ¡Cuentas equilibradas!</strong>
+            <div class="balance-action-box balanced">
+                <strong class="balance-action-title">✅ ¡Cuentas equilibradas!</strong>
             </div>
         `;
     }
@@ -733,9 +759,9 @@ function updateDailyBudgetWidget(monthExpenses, selectedMonth) {
     // If no budget configured, show message
     if (globalBudget === 0 && dailyCategories.length === 0) {
         container.innerHTML = `
-            <p class="text-center" style="color: #6b7280;">
+            <p class="text-center text-muted">
                 No hay presupuesto configurado.
-                <a href="/settings.html" style="color: #3b82f6; text-decoration: underline;">Configúralo aquí</a>
+                <a href="/daily-expenses.html" class="text-primary" style="text-decoration: underline;">Configúralo aquí</a>
             </p>
         `;
         return;
@@ -762,51 +788,46 @@ function updateDailyBudgetWidget(monthExpenses, selectedMonth) {
     const daysRemaining = isCurrentMonth ? daysInMonth - currentDayOfMonth : 0;
     const dailyAllowance = daysRemaining > 0 ? globalRemaining / daysRemaining : 0;
 
-    // Determine status color
-    const budgetColor = globalPercentUsed > 100 ? '#ef4444' : globalPercentUsed > 90 ? '#f59e0b' : globalPercentUsed > 75 ? '#eab308' : '#10b981';
+    // Determine status color and class
+    const budgetColorClass = globalPercentUsed > 100 ? 'text-danger' : globalPercentUsed > 90 ? 'text-warning' : 'text-success';
+    const budgetColor = globalPercentUsed > 100 ? 'var(--danger)' : globalPercentUsed > 90 ? 'var(--warning)' : globalPercentUsed > 75 ? 'var(--warning)' : 'var(--success)';
     const statusText = globalPercentUsed > 100 ? '⚠️ PRESUPUESTO EXCEDIDO' : globalPercentUsed > 90 ? '⚠️ CASI AGOTADO' : globalPercentUsed > 75 ? '⚡ ATENCIÓN' : '✓ BAJO CONTROL';
 
     let html = `
-        <div style="margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0;">Presupuesto Global</h3>
-                <span style="color: ${budgetColor}; font-weight: 600;">${statusText}</span>
+        <div class="mb-3">
+            <div class="budget-widget-header">
+                <h3 class="budget-widget-title">Presupuesto Global</h3>
+                <span class="${budgetColorClass}" style="font-weight: 600;">${statusText}</span>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                <div>
-                    <div style="color: #6b7280; font-size: 0.875rem;">Gastado</div>
-                    <div style="font-weight: 600; font-size: 1.125rem;">${formatCurrency(totalDailySpent)}</div>
+            <div class="budget-stats-grid">
+                <div class="budget-stat-item">
+                    <span class="budget-stat-label">Gastado</span>
+                    <span class="budget-stat-value">${formatCurrency(totalDailySpent)}</span>
                 </div>
-                <div>
-                    <div style="color: #6b7280; font-size: 0.875rem;">Presupuesto</div>
-                    <div style="font-weight: 600; font-size: 1.125rem;">${formatCurrency(globalBudget)}</div>
+                <div class="budget-stat-item">
+                    <span class="budget-stat-label">Presupuesto</span>
+                    <span class="budget-stat-value">${formatCurrency(globalBudget)}</span>
                 </div>
-                <div>
-                    <div style="color: #6b7280; font-size: 0.875rem;">Restante</div>
-                    <div style="font-weight: 600; font-size: 1.125rem; color: ${budgetColor};">
-                        ${formatCurrency(globalRemaining)}
-                    </div>
+                <div class="budget-stat-item">
+                    <span class="budget-stat-label">Restante</span>
+                    <span class="budget-stat-value ${budgetColorClass}">${formatCurrency(globalRemaining)}</span>
                 </div>
-                <div>
-                    <div style="color: #6b7280; font-size: 0.875rem;">% Usado</div>
-                    <div style="font-weight: 600; font-size: 1.125rem; color: ${budgetColor};">
-                        ${globalPercentUsed.toFixed(1)}%
-                    </div>
+                <div class="budget-stat-item">
+                    <span class="budget-stat-label">% Usado</span>
+                    <span class="budget-stat-value ${budgetColorClass}">${globalPercentUsed.toFixed(1)}%</span>
                 </div>
             </div>
 
-            <div style="background: #e5e7eb; border-radius: 0.5rem; height: 24px; overflow: hidden; position: relative;">
-                <div style="background: ${budgetColor}; height: 100%; width: ${Math.min(globalPercentUsed, 100)}%; transition: width 0.3s;"></div>
-                ${globalPercentUsed > 100 ? `<div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 600;">EXCEDIDO</div>` : ''}
+            <div class="budget-progress-bar">
+                <div class="budget-progress-fill" style="background: ${budgetColor}; width: ${Math.min(globalPercentUsed, 100)}%;"></div>
+                ${globalPercentUsed > 100 ? `<div class="budget-progress-text">EXCEDIDO</div>` : ''}
             </div>
 
             ${isCurrentMonth && daysRemaining > 0 ? `
-                <div style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.5rem; border-left: 4px solid ${budgetColor};">
-                    <div style="font-size: 0.875rem; color: #374151;">
-                        <strong>Quedan ${daysRemaining} días</strong> en el mes (día ${currentDayOfMonth}/${daysInMonth}).
-                        ${dailyAllowance > 0 ? `Puedes gastar <strong>${formatCurrency(dailyAllowance)}/día</strong> para mantenerte dentro del presupuesto.` : '<strong>Has agotado tu presupuesto.</strong>'}
-                    </div>
+                <div class="budget-info-box" style="border-left: 4px solid ${budgetColor};">
+                    <strong>Quedan ${daysRemaining} días</strong> en el mes (día ${currentDayOfMonth}/${daysInMonth}).
+                    ${dailyAllowance > 0 ? `Puedes gastar <strong>${formatCurrency(dailyAllowance)}/día</strong> para mantenerte dentro del presupuesto.` : '<strong>Has agotado tu presupuesto.</strong>'}
                 </div>
             ` : ''}
         </div>
@@ -826,24 +847,24 @@ function updateDailyBudgetWidget(monthExpenses, selectedMonth) {
         .slice(0, 3);
 
     if (sortedCategories.length > 0) {
-        html += '<h4 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Top Categorías</h4>';
-        html += '<div style="display: grid; gap: 0.75rem;">';
+        html += '<div class="budget-top-categories">';
+        html += '<h4 class="budget-top-title">Top Categorías</h4>';
 
         sortedCategories.forEach(([categoryName, spent], index) => {
             const configData = dailyExpensesConfig.categories?.[categoryName] || {};
             const budget = configData.monthlyBudget || 0;
             const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
-            const catColor = percentUsed > 100 ? '#ef4444' : percentUsed > 90 ? '#f59e0b' : '#10b981';
+            const catColorClass = percentUsed > 100 ? 'text-danger' : percentUsed > 90 ? 'text-warning' : 'text-success';
 
             html += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f9fafb; border-radius: 0.375rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-weight: 600; color: #6b7280; font-size: 0.875rem;">${index + 1}.</span>
-                        <span style="font-weight: 600;">${categoryName}</span>
+                <div class="budget-category-item">
+                    <div class="budget-category-left">
+                        <span class="budget-category-rank">${index + 1}.</span>
+                        <span class="budget-category-name">${categoryName}</span>
                     </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: 600;">${formatCurrency(spent)}</div>
-                        ${budget > 0 ? `<div style="font-size: 0.75rem; color: ${catColor};">${percentUsed.toFixed(0)}% de ${formatCurrency(budget)}</div>` : ''}
+                    <div class="budget-category-right">
+                        <div class="budget-category-amount">${formatCurrency(spent)}</div>
+                        ${budget > 0 ? `<div class="budget-category-percent ${catColorClass}">${percentUsed.toFixed(0)}% de ${formatCurrency(budget)}</div>` : ''}
                     </div>
                 </div>
             `;
@@ -853,4 +874,274 @@ function updateDailyBudgetWidget(monthExpenses, selectedMonth) {
     }
 
     container.innerHTML = html;
+}
+
+// ============================================
+// FIXED EXPENSES SECTION
+// ============================================
+
+function updateFixedExpensesSection(monthExpenses, selectedMonth) {
+    const container = document.getElementById('fixedExpensesSection');
+    if (!container) return;
+
+    const fixedCategories = categories.fijo || [];
+
+    if (fixedCategories.length === 0) {
+        container.innerHTML = `
+            <p class="text-center text-muted">
+                No hay categorías de gastos fijos configuradas.
+                <a href="/fixed-expenses.html" class="text-primary" style="text-decoration: underline;">Configúralas aquí</a>
+            </p>
+        `;
+        return;
+    }
+
+    // Filter fixed expenses for selected month
+    const monthFixedExpenses = monthExpenses.filter(e => e.type === 'fijo');
+
+    let html = '<div class="fixed-expenses-grid">';
+
+    fixedCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const emoji = typeof cat === 'object' && cat.emoji ? cat.emoji : '📋';
+
+        // Get expected config
+        const configData = fixedExpensesConfig[categoryName] || {
+            defaultAmount: 0,
+            paymentDay: 1,
+            assignedTo: ''
+        };
+
+        // Get actual expenses registered for this category
+        const categoryExpenses = monthFixedExpenses.filter(e => e.category === categoryName);
+        const totalPaid = categoryExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+        const isPaid = categoryExpenses.length > 0;
+
+        // Get who paid
+        const paidByList = [...new Set(categoryExpenses.map(e => e.paidBy))];
+        const paidByText = paidByList.length > 0 ? paidByList.join(', ') : '-';
+
+        html += `
+            <div class="fixed-expense-card ${isPaid ? 'paid' : 'pending'}">
+                <div class="fixed-expense-header">
+                    <span class="fixed-expense-title">${emoji} ${categoryName}</span>
+                    <span class="fixed-expense-status ${isPaid ? 'status-paid' : 'status-pending'}">
+                        ${isPaid ? '✓ Pagado' : '✗ Pendiente'}
+                    </span>
+                </div>
+                <div class="fixed-expense-body">
+                    <div class="fixed-expense-row">
+                        <span class="text-muted">Esperado:</span>
+                        <strong>${formatCurrency(configData.defaultAmount)}</strong>
+                    </div>
+                    ${isPaid ? `
+                        <div class="fixed-expense-row">
+                            <span class="text-muted">Pagado:</span>
+                            <strong class="text-success">${formatCurrency(totalPaid)}</strong>
+                        </div>
+                        <div class="fixed-expense-row">
+                            <span class="text-muted">Por:</span>
+                            <span>${paidByText}</span>
+                        </div>
+                    ` : `
+                        <div class="fixed-expense-row">
+                            <span class="text-muted">Día de pago:</span>
+                            <span>Día ${configData.paymentDay}</span>
+                        </div>
+                        ${configData.assignedTo ? `
+                            <div class="fixed-expense-row">
+                                <span class="text-muted">Responsable:</span>
+                                <span>${configData.assignedTo}</span>
+                            </div>
+                        ` : ''}
+                    `}
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    // Summary
+    const totalExpected = fixedCategories.reduce((sum, cat) => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        return sum + (fixedExpensesConfig[catName]?.defaultAmount || 0);
+    }, 0);
+    const totalPaidAll = monthFixedExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    const paidCount = fixedCategories.filter(cat => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        return monthFixedExpenses.some(e => e.category === catName);
+    }).length;
+
+    html += `
+        <div class="fixed-expenses-summary">
+            <div class="summary-item">
+                <span class="text-muted">Progreso:</span>
+                <strong>${paidCount}/${fixedCategories.length} pagados</strong>
+            </div>
+            <div class="summary-item">
+                <span class="text-muted">Total esperado:</span>
+                <strong>${formatCurrency(totalExpected)}</strong>
+            </div>
+            <div class="summary-item">
+                <span class="text-muted">Total pagado:</span>
+                <strong class="${totalPaidAll >= totalExpected ? 'text-success' : ''}">${formatCurrency(totalPaidAll)}</strong>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+// ============================================
+// VARIABLE EXPENSES SECTION
+// ============================================
+
+function updateVariableExpensesSection(monthExpenses, selectedMonth) {
+    const container = document.getElementById('variableExpensesSection');
+    if (!container) return;
+
+    const variableCategories = categories.variable || [];
+
+    if (variableCategories.length === 0) {
+        container.innerHTML = `
+            <p class="text-center text-muted">
+                No hay categorías de gastos variables configuradas.
+                <a href="/variable-expenses.html" class="text-primary" style="text-decoration: underline;">Configúralas aquí</a>
+            </p>
+        `;
+        return;
+    }
+
+    // Filter variable expenses for selected month
+    const monthVariableExpenses = monthExpenses.filter(e => e.type === 'variable');
+
+    let html = '<div class="variable-expenses-grid">';
+
+    variableCategories.forEach(cat => {
+        const categoryName = typeof cat === 'string' ? cat : cat.name;
+        const emoji = typeof cat === 'object' && cat.emoji ? cat.emoji : '📊';
+
+        // Get config
+        const configData = variableExpensesConfig[categoryName] || {
+            estimatedAmount: 0,
+            budgetAlert: 0
+        };
+
+        // Calculate current month spending
+        const currentSpent = monthVariableExpenses
+            .filter(e => e.category === categoryName)
+            .reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+        // Find last month with payment for this category
+        const lastPaidData = findLastPaidMonthForCategory(categoryName, selectedMonth);
+
+        // Calculate comparison
+        let comparisonHtml = '';
+        if (lastPaidData) {
+            const diff = currentSpent - lastPaidData.amount;
+            const percentChange = lastPaidData.amount > 0
+                ? ((diff / lastPaidData.amount) * 100).toFixed(1)
+                : 0;
+
+            const isIncrease = diff > 0;
+            const changeColor = isIncrease ? 'var(--danger)' : 'var(--success)';
+            const arrow = isIncrease ? '↑' : '↓';
+
+            comparisonHtml = `
+                <div class="variable-expense-comparison" style="color: ${changeColor};">
+                    ${arrow} ${isIncrease ? '+' : ''}${percentChange}% / ${isIncrease ? '+' : ''}${formatCurrency(diff)}
+                    <span class="comparison-month">vs ${getMonthName(lastPaidData.month)}</span>
+                </div>
+            `;
+        } else if (currentSpent > 0) {
+            comparisonHtml = `
+                <div class="variable-expense-comparison text-muted">
+                    Sin datos previos
+                </div>
+            `;
+        }
+
+        // Status color based on budget
+        const percentUsed = configData.estimatedAmount > 0
+            ? (currentSpent / configData.estimatedAmount) * 100
+            : 0;
+        const statusColor = percentUsed > 100 ? 'var(--danger)'
+                          : percentUsed > 90 ? 'var(--warning)'
+                          : 'var(--success)';
+
+        html += `
+            <div class="variable-expense-card">
+                <div class="variable-expense-header">
+                    <span class="variable-expense-title">${emoji} ${categoryName}</span>
+                </div>
+                <div class="variable-expense-body">
+                    <div class="variable-expense-amount">
+                        <span class="amount-label">Este mes:</span>
+                        <span class="amount-value">${formatCurrency(currentSpent)}</span>
+                    </div>
+                    ${configData.estimatedAmount > 0 ? `
+                        <div class="variable-expense-budget">
+                            <span class="text-muted">Estimado: ${formatCurrency(configData.estimatedAmount)}</span>
+                            <span style="color: ${statusColor}; font-weight: 600;">${percentUsed.toFixed(0)}%</span>
+                        </div>
+                    ` : ''}
+                    ${comparisonHtml}
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+
+    // Summary
+    const totalVariableSpent = monthVariableExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    const totalEstimated = variableCategories.reduce((sum, cat) => {
+        const catName = typeof cat === 'string' ? cat : cat.name;
+        return sum + (variableExpensesConfig[catName]?.estimatedAmount || 0);
+    }, 0);
+
+    html += `
+        <div class="variable-expenses-summary">
+            <div class="summary-item">
+                <span class="text-muted">Total gastado:</span>
+                <strong>${formatCurrency(totalVariableSpent)}</strong>
+            </div>
+            ${totalEstimated > 0 ? `
+                <div class="summary-item">
+                    <span class="text-muted">Total estimado:</span>
+                    <strong>${formatCurrency(totalEstimated)}</strong>
+                </div>
+                <div class="summary-item">
+                    <span class="text-muted">Diferencia:</span>
+                    <strong class="${totalVariableSpent <= totalEstimated ? 'text-success' : 'text-danger'}">
+                        ${totalVariableSpent <= totalEstimated ? '-' : '+'}${formatCurrency(Math.abs(totalEstimated - totalVariableSpent))}
+                    </strong>
+                </div>
+            ` : ''}
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+// Helper function to find last month with payment for a category
+function findLastPaidMonthForCategory(categoryName, currentMonth) {
+    const allMonths = getUniqueMonths(expenses).sort().reverse();
+
+    for (const month of allMonths) {
+        if (month >= currentMonth) continue; // Skip current and future months
+
+        const monthExp = filterExpensesByMonth(expenses, month);
+        const categoryExpenses = monthExp.filter(e =>
+            e.type === 'variable' && e.category === categoryName
+        );
+
+        if (categoryExpenses.length > 0) {
+            const totalAmount = categoryExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+            return { month, amount: totalAmount };
+        }
+    }
+
+    return null;
 }
