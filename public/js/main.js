@@ -288,13 +288,21 @@ async function deleteExpense(expenseId) {
     if (!confirm('¿Estás seguro de que quieres eliminar este gasto?')) {
         return;
     }
-    
+
     try {
-        await api.delete(`/expenses/${expenseId}`);
-        
+        // Find expense to get its month
+        const expense = expenses.find(e => e.id === expenseId);
+        if (!expense) {
+            showAlert('Gasto no encontrado', 'error');
+            return;
+        }
+        const month = expense.date.substring(0, 7);
+
+        await api.delete(`/expenses/${expenseId}?month=${month}`);
+
         // Remove from local array
         expenses = expenses.filter(e => e.id !== expenseId);
-        
+
         showAlert('Gasto eliminado exitosamente', 'success');
         displayRecentExpenses();
     } catch (error) {

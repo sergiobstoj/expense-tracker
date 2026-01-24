@@ -4,11 +4,31 @@ const { validateExpense } = require('../utils/validators');
 function createExpensesRouter(fileService) {
     const router = express.Router();
 
-    // Get all expenses
+    // Get available months
+    router.get('/months', async (req, res) => {
+        try {
+            const months = await fileService.listAvailableMonths();
+            res.json(months);
+        } catch (error) {
+            console.error('❌ Error listing months:', error);
+            res.status(500).json({ error: 'Error listing months' });
+        }
+    });
+
+    // Get expenses (optional: ?month=YYYY-MM)
     router.get('/', async (req, res) => {
         try {
-            const expenses = await fileService.readJSON('expenses.json');
-            res.json(expenses);
+            const { month } = req.query;
+
+            if (month) {
+                // Return only the specified month
+                const expenses = await fileService.readMonthData(month, 'expenses');
+                res.json(expenses);
+            } else {
+                // Return all months (backwards compatibility)
+                const expenses = await fileService.readAllMonthlyData('expenses');
+                res.json(expenses);
+            }
         } catch (error) {
             console.error('❌ Error reading expenses:', error);
             res.status(500).json({ error: 'Error reading expenses' });
@@ -27,15 +47,18 @@ function createExpensesRouter(fileService) {
                 });
             }
 
+            // Extract month from date
+            const month = req.body.date.substring(0, 7);
+
             const newExpense = {
                 id: Date.now(),
                 ...req.body,
                 createdAt: new Date().toISOString()
             };
 
-            const expenses = await fileService.updateJSON('expenses.json', (data) => {
-                data.push(newExpense);
-                return data;
+            await fileService.updateMonthData(month, 'expenses', (expenses) => {
+                expenses.push(newExpense);
+                return expenses;
             });
 
             res.json(newExpense);
@@ -60,12 +83,18 @@ function createExpensesRouter(fileService) {
                 });
             }
 
-            // Convert ID to number for comparison (IDs are stored as numbers)
-            const expenseId = parseInt(req.params.id, 10);
+            // Extract month from date
+            const month = req.body.date.substring(0, 7);
+
+            // Convert ID for comparison (support both string and number IDs)
+            const expenseId = req.params.id;
+            const expenseIdNum = parseInt(expenseId, 10);
 
             let found = false;
-            await fileService.updateJSON('expenses.json', (expenses) => {
-                const index = expenses.findIndex(e => e.id === expenseId);
+            await fileService.updateMonthData(month, 'expenses', (expenses) => {
+                const index = expenses.findIndex(e =>
+                    e.id === expenseId || e.id === expenseIdNum
+                );
                 if (index === -1) {
                     return expenses;
                 }
@@ -96,15 +125,38 @@ function createExpensesRouter(fileService) {
         }
     });
 
-    // Delete expense
+    // Delete expense (requires ?month=YYYY-MM)
     router.delete('/:id', async (req, res) => {
         try {
-            // Convert ID to number for comparison (IDs are stored as numbers)
-            const expenseId = parseInt(req.params.id, 10);
+            const { month } = req.query;
 
-            await fileService.updateJSON('expenses.json', (expenses) => {
-                return expenses.filter(e => e.id !== expenseId);
+            if (!month) {
+                return res.status(400).json({
+                    error: 'Month parameter required',
+                    details: 'Please provide ?month=YYYY-MM'
+                });
+            }
+
+            // Convert ID for comparison (support both string and number IDs)
+            const expenseId = req.params.id;
+            const expenseIdNum = parseInt(expenseId, 10);
+
+            let found = false;
+            await fileService.updateMonthData(month, 'expenses', (expenses) => {
+                const originalLength = expenses.length;
+                const filtered = expenses.filter(e =>
+                    e.id !== expenseId && e.id !== expenseIdNum
+                );
+                found = filtered.length < originalLength;
+                return filtered;
             });
+
+            if (!found) {
+                return res.status(404).json({
+                    error: 'Expense not found',
+                    details: `No expense found with id: ${req.params.id} in month ${month}`
+                });
+            }
 
             res.json({ success: true });
         } catch (error) {

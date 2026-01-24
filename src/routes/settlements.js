@@ -3,11 +3,20 @@ const express = require('express');
 function createSettlementsRouter(fileService) {
     const router = express.Router();
 
-    // Get all settlements
+    // Get settlements (optional: ?month=YYYY-MM)
     router.get('/', async (req, res) => {
         try {
-            const settlements = await fileService.readJSON('settlements.json');
-            res.json(settlements);
+            const { month } = req.query;
+
+            if (month) {
+                // Return only the specified month
+                const settlements = await fileService.readMonthData(month, 'settlements');
+                res.json(settlements);
+            } else {
+                // Return all months (backwards compatibility)
+                const settlements = await fileService.readAllMonthlyData('settlements');
+                res.json(settlements);
+            }
         } catch (error) {
             console.error('❌ Error reading settlements:', error);
             res.status(500).json({ error: 'Error reading settlements' });
@@ -54,9 +63,9 @@ function createSettlementsRouter(fileService) {
                 createdAt: new Date().toISOString()
             };
 
-            await fileService.updateJSON('settlements.json', (data) => {
-                data.push(newSettlement);
-                return data;
+            await fileService.updateMonthData(month, 'settlements', (settlements) => {
+                settlements.push(newSettlement);
+                return settlements;
             });
 
             console.log(`💰 Liquidación registrada: ${from} → ${to}: €${amount}`);
@@ -70,14 +79,38 @@ function createSettlementsRouter(fileService) {
         }
     });
 
-    // Delete settlement
+    // Delete settlement (requires ?month=YYYY-MM)
     router.delete('/:id', async (req, res) => {
         try {
-            const settlementId = parseInt(req.params.id, 10);
+            const { month } = req.query;
 
-            await fileService.updateJSON('settlements.json', (settlements) => {
-                return settlements.filter(s => s.id !== settlementId);
+            if (!month) {
+                return res.status(400).json({
+                    error: 'Month parameter required',
+                    details: 'Please provide ?month=YYYY-MM'
+                });
+            }
+
+            // Convert ID for comparison (support both string and number IDs)
+            const settlementId = req.params.id;
+            const settlementIdNum = parseInt(settlementId, 10);
+
+            let found = false;
+            await fileService.updateMonthData(month, 'settlements', (settlements) => {
+                const originalLength = settlements.length;
+                const filtered = settlements.filter(s =>
+                    s.id !== settlementId && s.id !== settlementIdNum
+                );
+                found = filtered.length < originalLength;
+                return filtered;
             });
+
+            if (!found) {
+                return res.status(404).json({
+                    error: 'Settlement not found',
+                    details: `No settlement found with id: ${req.params.id} in month ${month}`
+                });
+            }
 
             res.json({ success: true });
         } catch (error) {

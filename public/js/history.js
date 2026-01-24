@@ -351,7 +351,15 @@ async function deleteExpense(expenseId) {
     }
 
     try {
-        await api.delete(`/expenses/${expenseId}`);
+        // Find expense to get its month
+        const expense = expenses.find(e => e.id === expenseId);
+        if (!expense) {
+            showAlert('Gasto no encontrado', 'error');
+            return;
+        }
+        const month = expense.date.substring(0, 7);
+
+        await api.delete(`/expenses/${expenseId}?month=${month}`);
         expenses = expenses.filter(e => e.id !== expenseId);
 
         showAlert('Gasto eliminado exitosamente', 'success');
@@ -368,7 +376,15 @@ async function deleteIncome(incomeId) {
     }
 
     try {
-        await api.delete(`/incomes/${incomeId}`);
+        // Find income to get its month
+        const income = incomes.find(i => i.id === incomeId);
+        if (!income) {
+            showAlert('Ingreso no encontrado', 'error');
+            return;
+        }
+        const month = income.date.substring(0, 7);
+
+        await api.delete(`/incomes/${incomeId}?month=${month}`);
         incomes = incomes.filter(i => i.id !== incomeId);
 
         showAlert('Ingreso eliminado exitosamente', 'success');
