@@ -268,11 +268,19 @@ async function deleteIncome(incomeId) {
     if (!confirm('¿Estás seguro de que quieres eliminar este ingreso?')) {
         return;
     }
-    
+
     try {
-        await api.delete(`/incomes/${incomeId}`);
+        // Find income to get its month
+        const income = incomes.find(i => i.id === incomeId);
+        if (!income) {
+            showAlert('Ingreso no encontrado', 'error');
+            return;
+        }
+        const month = income.date.substring(0, 7);
+
+        await api.delete(`/incomes/${incomeId}?month=${month}`);
         incomes = incomes.filter(i => i.id !== incomeId);
-        
+
         showAlert('Ingreso eliminado exitosamente', 'success');
         displayRecentIncomes();
     } catch (error) {

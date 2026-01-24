@@ -5,6 +5,7 @@ class BackupService {
     constructor(dataDir, backupDir) {
         this.dataDir = dataDir;
         this.backupDir = backupDir;
+        this.monthsDir = path.join(dataDir, 'months');
     }
 
     /**
@@ -24,36 +25,83 @@ class BackupService {
                 // File doesn't exist, create backup
             }
 
-            // Read all data
-            const [expenses, incomes, categories, incomeCategories, config] = await Promise.all([
-                this._readJSONSafe('expenses.json', []),
-                this._readJSONSafe('incomes.json', []),
+            // Read global config files
+            const [categories, incomeCategories, config, fixedExpensesConfig, variableExpensesConfig, dailyExpensesConfig] = await Promise.all([
                 this._readJSONSafe('categories.json', {}),
                 this._readJSONSafe('income-categories.json', []),
-                this._readJSONSafe('config.json', {})
+                this._readJSONSafe('config.json', {}),
+                this._readJSONSafe('fixed-expenses-config.json', {}),
+                this._readJSONSafe('variable-expenses-config.json', {}),
+                this._readJSONSafe('daily-expenses-config.json', {})
             ]);
+
+            // Read monthly data
+            const monthsData = await this._readAllMonthsData();
 
             // Create backup object
             const backup = {
                 timestamp: new Date().toISOString(),
                 date: timestamp,
-                data: {
-                    expenses,
-                    incomes,
+                version: 2, // New structure version
+                globalData: {
                     categories,
                     incomeCategories,
-                    config
-                }
+                    config,
+                    fixedExpensesConfig,
+                    variableExpensesConfig,
+                    dailyExpensesConfig
+                },
+                monthsData
             };
 
             // Write backup
             await fs.writeFile(backupFile, JSON.stringify(backup, null, 2));
-            console.log(`✓ Backup created: ${timestamp}`);
+            console.log(`✓ Backup created: ${timestamp} (${Object.keys(monthsData).length} months)`);
 
             // Clean old backups (keep last 30 days)
             await this.cleanOldBackups();
         } catch (error) {
             console.error('❌ Error creating backup:', error);
+        }
+    }
+
+    /**
+     * Read all months data
+     */
+    async _readAllMonthsData() {
+        const monthsData = {};
+
+        try {
+            await fs.mkdir(this.monthsDir, { recursive: true });
+            const entries = await fs.readdir(this.monthsDir, { withFileTypes: true });
+            const months = entries
+                .filter(e => e.isDirectory() && /^\d{4}-\d{2}$/.test(e.name))
+                .map(e => e.name);
+
+            for (const month of months) {
+                const monthDir = path.join(this.monthsDir, month);
+                monthsData[month] = {
+                    expenses: await this._readMonthFileSafe(monthDir, 'expenses.json'),
+                    incomes: await this._readMonthFileSafe(monthDir, 'incomes.json'),
+                    settlements: await this._readMonthFileSafe(monthDir, 'settlements.json')
+                };
+            }
+        } catch (error) {
+            console.error('❌ Error reading months data:', error);
+        }
+
+        return monthsData;
+    }
+
+    /**
+     * Read a monthly file safely
+     */
+    async _readMonthFileSafe(monthDir, filename) {
+        try {
+            const data = await fs.readFile(path.join(monthDir, filename), 'utf8');
+            return JSON.parse(data);
+        } catch {
+            return [];
         }
     }
 

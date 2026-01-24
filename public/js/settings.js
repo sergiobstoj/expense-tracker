@@ -9,53 +9,68 @@ let dailyExpensesConfig = {};
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await Promise.all([
-            loadCategories(),
-            loadIncomeCategories(),
-            loadConfig(),
-            loadExpenses(),
-            loadIncomes(),
-            loadFixedExpensesConfig(),
-            loadVariableExpensesConfig(),
-            loadDailyExpensesConfig()
-        ]);
+    // Load all data with individual error handling
+    await loadCategories().catch(e => console.error('Error loading categories:', e));
+    await loadIncomeCategories().catch(e => console.error('Error loading income categories:', e));
+    await loadConfig().catch(e => console.error('Error loading config:', e));
+    await loadExpenses().catch(e => console.error('Error loading expenses:', e));
+    await loadIncomes().catch(e => console.error('Error loading incomes:', e));
+    await loadFixedExpensesConfig().catch(e => console.error('Error loading fixed expenses config:', e));
+    await loadVariableExpensesConfig().catch(e => console.error('Error loading variable expenses config:', e));
+    await loadDailyExpensesConfig().catch(e => console.error('Error loading daily expenses config:', e));
 
-        displayPersonsForm();
-        displayCategories();
-        displayUserPins();
-        displayClosedMonths();
-        displayMonthlyPercentages();
-        setupMonthSelector();
-        displayFixedExpensesConfig();
-        displayVariableExpensesConfig();
-        displayDailyExpensesConfig();
-        displayCategoryTypeChanger();
-        setupEventHandlers();
-    } catch (error) {
-        console.error('Error initializing:', error);
-        showAlert('Error al cargar configuración', 'error');
-    }
+    // Display sections with individual error handling
+    try { displayPersonsForm(); } catch(e) { console.error('Error displaying persons form:', e); }
+    try { displayCategories(); } catch(e) { console.error('Error displaying categories:', e); }
+    try { displayUserPins(); } catch(e) { console.error('Error displaying user pins:', e); }
+    try { displayClosedMonths(); } catch(e) { console.error('Error displaying closed months:', e); }
+    try { displayMonthlyPercentages(); } catch(e) { console.error('Error displaying monthly percentages:', e); }
+    try { setupMonthSelector(); } catch(e) { console.error('Error setting up month selector:', e); }
+    try { displayFixedExpensesConfig(); } catch(e) { console.error('Error displaying fixed expenses config:', e); }
+    try { displayVariableExpensesConfig(); } catch(e) { console.error('Error displaying variable expenses config:', e); }
+    try { displayDailyExpensesConfig(); } catch(e) { console.error('Error displaying daily expenses config:', e); }
+    try { displayCategoryTypeChanger(); } catch(e) { console.error('Error displaying category type changer:', e); }
+    try { setupEventHandlers(); } catch(e) { console.error('Error setting up event handlers:', e); }
 });
 
 async function loadCategories() {
-    categories = await api.get('/categories');
+    try {
+        categories = await api.get('/categories');
+    } catch (e) {
+        categories = { fijo: [], variable: [], diario: [] };
+    }
 }
 
 async function loadIncomeCategories() {
-    incomeCategories = await api.get('/income-categories');
+    try {
+        incomeCategories = await api.get('/income-categories');
+    } catch (e) {
+        incomeCategories = [];
+    }
 }
 
 async function loadConfig() {
-    config = await api.get('/config');
+    try {
+        config = await api.get('/config');
+    } catch (e) {
+        config = { persons: [], splitPercentages: {}, monthlyPercentages: {} };
+    }
 }
 
 async function loadExpenses() {
-    expenses = await api.get('/expenses');
+    try {
+        expenses = await api.get('/expenses');
+    } catch (e) {
+        expenses = [];
+    }
 }
 
 async function loadIncomes() {
-    incomes = await api.get('/incomes');
+    try {
+        incomes = await api.get('/incomes');
+    } catch (e) {
+        incomes = [];
+    }
 }
 
 function displayPersonsForm() {
@@ -197,22 +212,17 @@ async function changeUserPin(person) {
 
 function setupEventHandlers() {
     // Persons form
-    document.getElementById('personsForm').addEventListener('submit', handlePersonsFormSubmit);
+    document.getElementById('personsForm')?.addEventListener('submit', handlePersonsFormSubmit);
 
     // Master PIN form
-    document.getElementById('masterPinForm').addEventListener('submit', handleMasterPinSubmit);
+    document.getElementById('masterPinForm')?.addEventListener('submit', handleMasterPinSubmit);
 
     // Month closure
-    document.getElementById('btnCloseMonth').addEventListener('click', handleCloseMonth);
-
-    // Category forms
-    document.getElementById('addCategoryFijo').addEventListener('submit', (e) => handleAddCategory(e, 'fijo'));
-    document.getElementById('addCategoryVariable').addEventListener('submit', (e) => handleAddCategory(e, 'variable'));
-    document.getElementById('addCategoryDiario').addEventListener('submit', (e) => handleAddCategory(e, 'diario'));
+    document.getElementById('btnCloseMonth')?.addEventListener('click', handleCloseMonth);
 
     // Monthly percentages
-    document.getElementById('monthToEdit').addEventListener('change', handleMonthSelectChange);
-    document.getElementById('btnSaveMonthPercentages').addEventListener('click', handleSaveMonthPercentages);
+    document.getElementById('monthToEdit')?.addEventListener('change', handleMonthSelectChange);
+    document.getElementById('btnSaveMonthPercentages')?.addEventListener('click', handleSaveMonthPercentages);
 
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
@@ -228,10 +238,10 @@ function setupEventHandlers() {
     }
 
     // Export buttons
-    document.getElementById('btnExportAll').addEventListener('click', exportAllData);
-    document.getElementById('btnExportCSV').addEventListener('click', exportCSVData);
-    document.getElementById('btnDownloadTemplate').addEventListener('click', downloadTemplate);
-    document.getElementById('btnImport').addEventListener('click', handleImport);
+    document.getElementById('btnExportAll')?.addEventListener('click', exportAllData);
+    document.getElementById('btnExportCSV')?.addEventListener('click', exportCSVData);
+    document.getElementById('btnDownloadTemplate')?.addEventListener('click', downloadTemplate);
+    document.getElementById('btnImport')?.addEventListener('click', handleImport);
 }
 
 function displayClosedMonths() {
@@ -898,15 +908,27 @@ async function handleSaveMonthPercentages() {
 // ============================================
 
 async function loadFixedExpensesConfig() {
-    fixedExpensesConfig = await api.get('/expenses-config/fixed');
+    try {
+        fixedExpensesConfig = await api.get('/expenses-config/fixed');
+    } catch (e) {
+        fixedExpensesConfig = {};
+    }
 }
 
 async function loadVariableExpensesConfig() {
-    variableExpensesConfig = await api.get('/expenses-config/variable');
+    try {
+        variableExpensesConfig = await api.get('/expenses-config/variable');
+    } catch (e) {
+        variableExpensesConfig = {};
+    }
 }
 
 async function loadDailyExpensesConfig() {
-    dailyExpensesConfig = await api.get('/expenses-config/daily');
+    try {
+        dailyExpensesConfig = await api.get('/expenses-config/daily');
+    } catch (e) {
+        dailyExpensesConfig = { globalBudget: 0, categories: {} };
+    }
 }
 
 function displayFixedExpensesConfig() {
@@ -1211,6 +1233,9 @@ async function saveDailyExpensesConfig() {
 // CHANGE CATEGORY TYPE
 // ============================================
 
+// Store category type mapping for the changer
+let categoryTypeMap = {};
+
 function displayCategoryTypeChanger() {
     const selectCategory = document.getElementById('categoryToChange');
     const currentType = document.getElementById('currentType');
@@ -1218,49 +1243,75 @@ function displayCategoryTypeChanger() {
     const migrationOptions = document.getElementById('migrationOptions');
     const btnChange = document.getElementById('btnChangeCategoryType');
 
-    if (!selectCategory) return;
+    if (!selectCategory || !currentType || !newType || !btnChange) return;
 
-    // Populate category dropdown
+    // Build category type mapping
+    categoryTypeMap = {};
     let html = '<option value="">Selecciona una categoría...</option>';
 
     ['fijo', 'variable', 'diario'].forEach(type => {
         const cats = categories[type] || [];
         cats.forEach(cat => {
             const categoryName = typeof cat === 'string' ? cat : cat.name;
-            html += `<option value="${categoryName}" data-type="${type}">${categoryName} (${type})</option>`;
+            categoryTypeMap[categoryName] = type;
+            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+            html += `<option value="${categoryName}">${categoryName} (${typeLabel})</option>`;
         });
     });
 
     selectCategory.innerHTML = html;
 
-    // Event handlers
-    selectCategory.addEventListener('change', (e) => {
-        const selected = e.target.selectedOptions[0];
-        if (selected && selected.value) {
-            const type = selected.dataset.type;
-            currentType.value = type.charAt(0).toUpperCase() + type.slice(1);
-            newType.value = '';
-            migrationOptions.style.display = 'none';
-            btnChange.disabled = true;
-        } else {
-            currentType.value = '';
-            newType.value = '';
-            migrationOptions.style.display = 'none';
-            btnChange.disabled = true;
-        }
-    });
+    // Remove old event listeners by cloning
+    const newSelectCategory = selectCategory.cloneNode(true);
+    selectCategory.parentNode.replaceChild(newSelectCategory, selectCategory);
 
-    newType?.addEventListener('change', () => {
-        if (selectCategory.value && newType.value && currentType.value.toLowerCase() !== newType.value) {
-            migrationOptions.style.display = 'block';
-            btnChange.disabled = false;
-        } else {
-            migrationOptions.style.display = 'none';
-            btnChange.disabled = true;
-        }
-    });
+    const newNewType = newType.cloneNode(true);
+    newType.parentNode.replaceChild(newNewType, newType);
 
-    btnChange?.addEventListener('click', changeCategoryType);
+    const newBtnChange = btnChange.cloneNode(true);
+    btnChange.parentNode.replaceChild(newBtnChange, btnChange);
+
+    // Add fresh event handlers
+    document.getElementById('categoryToChange').addEventListener('change', handleCategorySelect);
+    document.getElementById('newType').addEventListener('change', handleNewTypeSelect);
+    document.getElementById('btnChangeCategoryType').addEventListener('click', changeCategoryType);
+}
+
+function handleCategorySelect(e) {
+    const categoryName = e.target.value;
+    const currentType = document.getElementById('currentType');
+    const newType = document.getElementById('newType');
+    const migrationOptions = document.getElementById('migrationOptions');
+    const btnChange = document.getElementById('btnChangeCategoryType');
+
+    if (categoryName && categoryTypeMap[categoryName]) {
+        const type = categoryTypeMap[categoryName];
+        currentType.value = type.charAt(0).toUpperCase() + type.slice(1);
+        newType.value = '';
+        migrationOptions.style.display = 'none';
+        btnChange.disabled = true;
+    } else {
+        currentType.value = '';
+        newType.value = '';
+        migrationOptions.style.display = 'none';
+        btnChange.disabled = true;
+    }
+}
+
+function handleNewTypeSelect() {
+    const selectCategory = document.getElementById('categoryToChange');
+    const currentType = document.getElementById('currentType');
+    const newType = document.getElementById('newType');
+    const migrationOptions = document.getElementById('migrationOptions');
+    const btnChange = document.getElementById('btnChangeCategoryType');
+
+    if (selectCategory.value && newType.value && currentType.value.toLowerCase() !== newType.value) {
+        migrationOptions.style.display = 'block';
+        btnChange.disabled = false;
+    } else {
+        migrationOptions.style.display = 'none';
+        btnChange.disabled = true;
+    }
 }
 
 async function changeCategoryType() {
